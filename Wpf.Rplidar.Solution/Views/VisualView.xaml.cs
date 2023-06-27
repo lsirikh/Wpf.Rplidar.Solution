@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace Wpf.Rplidar.Solution.Views
 {
     /// <summary>
-    /// Interaction logic for DemoView.xaml
+    /// Interaction logic for VisualView.xaml
     /// </summary>
-    public partial class DemoView : UserControl
+    public partial class VisualView : UserControl
     {
-        public DemoView()
+        public VisualView()
         {
             InitializeComponent();
         }

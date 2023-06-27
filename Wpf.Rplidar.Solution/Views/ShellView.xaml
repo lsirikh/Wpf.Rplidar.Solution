@@ -6,13 +6,55 @@
         xmlns:local="clr-namespace:Wpf.Rplidar.Solution.Views"
 		xmlns:cal="http://caliburnmicro.com"
         mc:Ignorable="d"
-        Title="ShellView" Height="450" Width="800">
+        Title="ShellView" Height="800" Width="1000">
     <Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="1*"/>
-			<RowDefinition Height="5*"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="2*"/>
 		</Grid.RowDefinitions>
-		<TextBlock Grid.Row="0" Text="Welcom to WPF World" FontSize="35" FontWeight="Bold" TextAlignment="Center"/>
-		<ContentControl Grid.Row="1" x:Name="DemoViewModel" />
+		<TextBlock Grid.Row="0" Text="RPLidar" FontSize="35" FontWeight="Bold" TextAlignment="Center"/>
+		<Canvas Background="#88000000"
+				Grid.Row="1"
+				Width="1000"
+				Height="600"
+				ClipToBounds="True">
+			<ItemsControl ItemsSource="{Binding Points, UpdateSourceTrigger=PropertyChanged}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<Canvas/>
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<Ellipse Width="3" Height="3" Fill="WhiteSmoke">
+							<Ellipse.RenderTransform>
+								<!--<TranslateTransform X="{Binding X, Converter={StaticResource OffsetConverter}, ConverterParameter=X}" Y="{Binding Y, Converter={StaticResource OffsetConverter}, ConverterParameter=Y}"/>-->
+								<TranslateTransform X="{Binding X}" Y="{Binding Y}"/>
+							</Ellipse.RenderTransform>
+						</Ellipse>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+				<ItemsControl.ItemContainerStyle>
+					<Style>
+						<!--<Setter Property="Canvas.Left" Value="{Binding X, Converter={StaticResource OffsetConverter}, ConverterParameter=X}"/>
+						<Setter Property="Canvas.Top" Value="{Binding Y, Converter={StaticResource OffsetConverter}, ConverterParameter=Y/> -->
+						<Setter Property="Canvas.Left" Value="{Binding X}"/>
+						<Setter Property="Canvas.Top" Value="{Binding Y}"/>
+					</Style>
+				</ItemsControl.ItemContainerStyle>
+			</ItemsControl>
+		</Canvas>
+		<ListView Grid.Row="2"  ItemsSource="{Binding LogProvider}">
+			<ListView.ItemTemplate>
+				<DataTemplate>
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="{Binding CreatedTime}" Margin="5"/>
+						<TextBlock Text="{Binding Type}" Margin="5"/>
+						<TextBlock Text="{Binding Message}" Margin="5"/>
+					</StackPanel>
+				</DataTemplate>
+			</ListView.ItemTemplate>
+		</ListView>
 	</Grid>
 </Window>

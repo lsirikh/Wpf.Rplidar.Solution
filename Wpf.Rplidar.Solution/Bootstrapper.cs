@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Wpf.Rplidar.Solution.Base;
+using Wpf.Rplidar.Solution.Services;
 using Wpf.Rplidar.Solution.ViewModels;
 
 namespace Wpf.Rplidar.Solution
@@ -39,7 +40,8 @@ namespace Wpf.Rplidar.Solution
             {
                 base.ConfigureContainer(builder);
 
-                builder.RegisterType<DemoViewModel>().SingleInstance();
+                builder.RegisterType<VisualViewModel>().SingleInstance();
+                builder.RegisterType<LidarService>().SingleInstance();
             }
             catch (Exception)
             {

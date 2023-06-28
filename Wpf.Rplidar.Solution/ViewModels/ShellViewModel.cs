@@ -19,10 +19,12 @@ namespace Wpf.Rplidar.Solution.ViewModels
     {
         #region - Ctors -
         public ShellViewModel(IEventAggregator eventAggregator
+                                , VisualViewModel visualViewModel
                                 , LidarService lidarService)
         {
             _eventAggregator = eventAggregator;
             _lidarService = lidarService;
+            VisualViewModel = visualViewModel;
         }
         #endregion
         #region - Implementation of Interface -
@@ -31,15 +33,13 @@ namespace Wpf.Rplidar.Solution.ViewModels
         protected override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             LogProvider = new ObservableCollection<LogViewModel>();
+
             NotifyOfPropertyChange(()=> LogProvider);
             
             _eventAggregator.SubscribeOnUIThread(this);
-            
             _lidarService.Message += _lidarService_Message;
-            _lidarService.SendPoints += _lidarService_SendPoints;
             _lidarService.InitSerial();
-
-
+            VisualViewModel.ActivateAsync();
             return base.OnActivateAsync(cancellationToken);
         }
         
@@ -48,6 +48,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         {
             _eventAggregator.Unsubscribe(this);
             _lidarService.UninitSerial();
+            VisualViewModel.DeactivateAsync(true);
             return base.OnDeactivateAsync(close, cancellationToken);
         }
         #endregion
@@ -64,41 +65,12 @@ namespace Wpf.Rplidar.Solution.ViewModels
         #endregion
         #region - Properties -
         public ObservableCollection<LogViewModel> LogProvider { get; set; }
-
-        private Task _lidarService_SendPoints(List<Measure> measures)
-        {
-            Points = measures;
-
-            ////Points = measures;
-            //foreach (var item in measures)
-            //{
-            //    Points.Add(item);
-            //}
-
-            NotifyOfPropertyChange(() => Points);
-            return Task.CompletedTask;
-
-            //return Task.Run(() => 
-            //{
-            //    lock (locker)
-            //    {
-
-            //        Debug.WriteLine($"=====Start=====");
-            //        foreach (var item in measures)
-            //        {
-            //            Debug.WriteLine($"θ:{item.angle}, L:{item.distance}, X:{item.X}, Y:{item.Y}");
-            //        }
-            //        Debug.WriteLine($"=====End=====");
-            //    }
-            //});
-
-        }
-        public List<Measure> Points { get; set; }
+        public VisualViewModel VisualViewModel { get; }
+        
         #endregion
         #region - Attributes -
         private IEventAggregator _eventAggregator;
         private LidarService _lidarService;
-
         #endregion
     }
 }

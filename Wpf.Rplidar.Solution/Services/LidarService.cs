@@ -37,7 +37,7 @@ namespace Wpf.Rplidar.Solution.Services
         public void InitSerial()
         {
             // 시리얼 포트 설정
-            string portName = "COM3"; // 연결할 COM 포트 이름
+            string portName = "COM4"; // 연결할 COM 포트 이름
 
             // SerialPort 객체 생성 및 설정
             rplidar = new RPLidarA1class();
@@ -55,7 +55,7 @@ namespace Wpf.Rplidar.Solution.Services
 
                 // DispatcherTimer를 사용하여 데이터 수신 주기 설정
                 timer = new DispatcherTimer();
-                timer.Interval = TimeSpan.FromMilliseconds(1000); // 100ms마다 데이터 수신
+                timer.Interval = TimeSpan.FromMilliseconds(100); // 100ms마다 데이터 수신
                 timer.Tick += Timer_Tick;
                 timer.Start();
 

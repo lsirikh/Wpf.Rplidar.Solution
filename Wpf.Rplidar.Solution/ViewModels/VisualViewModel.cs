@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Remoting.Contexts;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Services;
 
@@ -18,7 +20,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
     {
         #region - Ctors -
         public VisualViewModel(IEventAggregator eventAggregator
-                                , LidarService lidarService) 
+                                , LidarService lidarService)
             : base(eventAggregator)
         {
             _lidarService = lidarService;
@@ -31,10 +33,16 @@ namespace Wpf.Rplidar.Solution.ViewModels
         protected override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             _lidarService.SendPoints += _lidarService_SendPoints;
+            //List<Point> points = new List<Point>();
+            //points.Add(new Point(100, 200));
+            //points.Add(new Point(100, 300));
+            //points.Add(new Point(200, 300));
+            //points.Add(new Point(400, 600));
+            //UpdatePoints(points);
+
+            Scale = 10d;
             return base.OnActivateAsync(cancellationToken);
         }
-
-        
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
@@ -46,24 +54,15 @@ namespace Wpf.Rplidar.Solution.ViewModels
         #region - Processes -
         private Task _lidarService_SendPoints(List<Measure> measures)
         {
-            return Task.Run(() =>
+            List<Point> points = new List<Point>();
+            foreach (Measure measure in measures)
             {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Points = measures;
+                points.Add(new Point(measure.X, measure.Y));
+            }
 
-                    ////Points = measures;
-                    //foreach (var item in measures)
-                    //{
-                    //    Points.Add(item);
-                    //}
+            UpdatePoints(points);
 
-                    NotifyOfPropertyChange(() => Points);
-                });
-                //await Task.Delay(10);
-
-            });
-
+            return Task.CompletedTask;
             //return Task.Run(() => 
             //{
             //    lock (locker)
@@ -77,16 +76,114 @@ namespace Wpf.Rplidar.Solution.ViewModels
             //        Debug.WriteLine($"=====End=====");
             //    }
             //});
-            
+
+        }
+
+        private void UpdatePoints(List<Point> points)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Geometry = GenerateGeometry(points);
+            });
+        }
+
+        private StreamGeometry GenerateGeometry(List<Point> points)
+        {
+            StreamGeometry geometry = new StreamGeometry();
+            using (StreamGeometryContext ctx = geometry.Open())
+            {
+                ctx.BeginFigure(new Point((points.FirstOrDefault().X + XOffset) / Scale, (points.FirstOrDefault().Y + YOffset) / Scale), true, false);
+                foreach (var point in points)
+                {
+                    var newPoint = new Point((point.X + XOffset) / Scale, (point.Y + YOffset) / Scale);
+                    ctx.LineTo(newPoint, true, false);
+                }
+            }
+            return geometry;
         }
         #endregion
         #region - IHanldes -
         #endregion
         #region - Properties -
-        public List<Measure> Points { get; set; } 
+        public StreamGeometry Geometry
+        {
+            get { return geometry; }
+            set
+            {
+                if (geometry != value)
+                {
+                    geometry = value;
+                    NotifyOfPropertyChange(() => Geometry);
+                }
+            }
+        }
+
+        private int _width;
+
+        public int Width
+        {
+            get { return _width; }
+            set
+            {
+                _width = value;
+                NotifyOfPropertyChange(() => Width);
+            }
+        }
+
+        private int _height;
+
+        public int Height
+        {
+            get { return _height; }
+            set
+            {
+                _height = value;
+                NotifyOfPropertyChange(() => Height);
+            }
+        }
+
+        private double _xOffset;
+
+        public double XOffset
+        {
+            get { return _xOffset; }
+            set
+            {
+                _xOffset = value;
+                NotifyOfPropertyChange(() => XOffset);
+            }
+        }
+
+        private double _yOffset;
+
+        public double YOffset
+        {
+            get { return _yOffset; }
+            set
+            {
+                _yOffset = value;
+                NotifyOfPropertyChange(() => YOffset);
+            }
+        }
+
+
+        private double _scale;
+
+        public double Scale
+        {
+            get { return _scale; }
+            set
+            {
+                _scale = value;
+                NotifyOfPropertyChange(() => Scale);
+            }
+        }
+
+        //public List<Measure> Points { get; set; } 
         #endregion
         #region - Attributes -
         private LidarService _lidarService;
+        private StreamGeometry geometry;
         private object locker;
         #endregion
     }

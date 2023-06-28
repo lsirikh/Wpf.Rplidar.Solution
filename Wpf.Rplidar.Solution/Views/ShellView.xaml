@@ -7,14 +7,64 @@
 		xmlns:cal="http://caliburnmicro.com"
         mc:Ignorable="d"
         Title="ShellView" Height="800" Width="1000">
+	<Window.Resources>
+		<Style TargetType="TextBlock" x:Key="TextBlockStyle">
+			<Setter Property="FontSize" Value="15" />
+			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="Margin" Value="5"/>
+			<Setter Property="VerticalAlignment" Value="Center"/>
+			<Setter Property="TextAlignment" Value="Center"/>
+		</Style>
+		<Style TargetType="TextBox" x:Key="TextBoxStyle">
+			<Setter Property="FontSize" Value="15" />
+			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="Margin" Value="5"/>
+			<Setter Property="VerticalAlignment" Value="Center"/>
+			<Setter Property="TextAlignment" Value="Center"/>
+		</Style>
+		<Style TargetType="Button" x:Key="ButtonStyle">
+			<Setter Property="Margin" Value="5"/>
+		</Style>
+	</Window.Resources>
     <Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="1*"/>
 			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="2*"/>
 		</Grid.RowDefinitions>
 		<TextBlock Grid.Row="0" Text="RPLidar" FontSize="35" FontWeight="Bold" TextAlignment="Center"/>
-		<Canvas Background="#88000000"
+		<Grid Grid.Row="1">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="*"/>
+			</Grid.ColumnDefinitions>
+			<TextBlock Grid.Column="0"
+					   Text="COM"
+					   Style="{StaticResource TextBlockStyle}"/>
+			<TextBox Grid.Column="1"
+					 Style="{StaticResource TextBoxStyle}"
+					 Text="{Binding ComPort, UpdateSourceTrigger=LostFocus}"/>
+			<TextBlock Grid.Column="2"
+					   Text="Status"
+					   Style="{StaticResource TextBlockStyle}"/>
+			<TextBox Grid.Column="3"
+					 Style="{StaticResource TextBoxStyle}"
+					 Text="{Binding Status, UpdateSourceTrigger=LostFocus}"/>
+			<Button Grid.Column="4"
+					x:Name="ClickToConnect"
+					Style="{StaticResource ButtonStyle}"
+					Content="Connect"/>
+			<Button Grid.Column="5"
+					x:Name="ClickToDisconnect"
+					Style="{StaticResource ButtonStyle}"
+					Content="Disconnect"/>
+		</Grid>
+		<!--<Canvas Background="#88000000"
 				Grid.Row="1"
 				Width="1000"
 				Height="600"
@@ -29,7 +79,6 @@
 					<DataTemplate>
 						<Ellipse Width="3" Height="3" Fill="WhiteSmoke">
 							<Ellipse.RenderTransform>
-								<!--<TranslateTransform X="{Binding X, Converter={StaticResource OffsetConverter}, ConverterParameter=X}" Y="{Binding Y, Converter={StaticResource OffsetConverter}, ConverterParameter=Y}"/>-->
 								<TranslateTransform X="{Binding X}" Y="{Binding Y}"/>
 							</Ellipse.RenderTransform>
 						</Ellipse>
@@ -37,15 +86,14 @@
 				</ItemsControl.ItemTemplate>
 				<ItemsControl.ItemContainerStyle>
 					<Style>
-						<!--<Setter Property="Canvas.Left" Value="{Binding X, Converter={StaticResource OffsetConverter}, ConverterParameter=X}"/>
-						<Setter Property="Canvas.Top" Value="{Binding Y, Converter={StaticResource OffsetConverter}, ConverterParameter=Y/> -->
 						<Setter Property="Canvas.Left" Value="{Binding X}"/>
 						<Setter Property="Canvas.Top" Value="{Binding Y}"/>
 					</Style>
 				</ItemsControl.ItemContainerStyle>
 			</ItemsControl>
-		</Canvas>
-		<ListView Grid.Row="2"  ItemsSource="{Binding LogProvider}">
+		</Canvas>-->
+		<ContentControl Grid.Row="2" x:Name="VisualViewModel"/>
+		<ListView Grid.Row="3"  ItemsSource="{Binding LogProvider}">
 			<ListView.ItemTemplate>
 				<DataTemplate>
 					<StackPanel Orientation="Horizontal">

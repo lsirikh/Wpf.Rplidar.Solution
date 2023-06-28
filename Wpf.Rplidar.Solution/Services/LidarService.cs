@@ -5,6 +5,8 @@ using System;
 using System.Windows.Threading;
 using System.Net;
 using System.Threading.Tasks;
+using System.Timers;
+using System.Threading;
 
 namespace Wpf.Rplidar.Solution.Services
 {
@@ -33,35 +35,36 @@ namespace Wpf.Rplidar.Solution.Services
         #region - Binding Methods -
         #endregion
         #region - Processes -
-        
-        public void InitSerial()
+        public void InitSerial(string comport)
         {
+            
+            cts = new CancellationTokenSource();
+
             // 시리얼 포트 설정
-            string portName = "COM4"; // 연결할 COM 포트 이름
+            string portName = comport; // 연결할 COM 포트 이름
 
             // SerialPort 객체 생성 및 설정
             rplidar = new RPLidarA1class();
-            string[] porte = rplidar.FindSerialPorts(); //Find serial ports
 
-            Debug.WriteLine("COM 포트 연결을 시도합니다.");
+            //Debug.WriteLine("COM 포트 연결을 시도합니다.");
             Message?.Invoke("COM 포트 연결을 시도합니다.");
 
             try
             {
                 // 시리얼 포트 열기
                 bool result = rplidar.ConnectSerial(portName); //Open Serial Port COM1
-                Debug.WriteLine("COM 포트 연결 성공");
+                //Debug.WriteLine("COM 포트 연결 성공");
                 Message?.Invoke("COM 포트 연결 성공");
 
                 // DispatcherTimer를 사용하여 데이터 수신 주기 설정
-                timer = new DispatcherTimer();
-                timer.Interval = TimeSpan.FromMilliseconds(100); // 100ms마다 데이터 수신
-                timer.Tick += Timer_Tick;
+                timer = new System.Timers.Timer();
+                timer.Interval = 100; // 100ms마다 데이터 수신
+                timer.Elapsed += Timer_Tick;
                 timer.Start();
 
                 string snum = rplidar.SerialNum(); //Get RPLidar Info
 
-                Debug.WriteLine($"Lidar Info : {snum}");
+                //Debug.WriteLine($"Lidar Info : {snum}");
                 Message?.Invoke($"Lidar Info : {snum}");
 
                 if (!rplidar.BoostScan()) //Start BoostScan
@@ -69,59 +72,85 @@ namespace Wpf.Rplidar.Solution.Services
                     rplidar.CloseSerial(); //On scan error close serial port
                     return;
                 }
-
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Lidar 셋업 중 오류가 발생했습니다: " + ex.Message);
+                //Debug.WriteLine("Lidar 셋업 중 오류가 발생했습니다: " + ex.Message);
                 Message?.Invoke("Lidar 셋업 중 오류가 발생했습니다: " + ex.Message);
             }
         }
 
-        public void UninitSerial()
+        public async void UninitSerial()
         {
             try
             {
                 // 시리얼 포트 닫기
-                timer.Stop();
-                rplidar.Stop_Scan(); //Stop Scan Thread
-                rplidar.CloseSerial(); //Close serial port
-                Debug.WriteLine("Lidar를 정상적으로 종료합니다.");
+                if (!cts.IsCancellationRequested)
+                    cts?.Cancel();
+                cts?.Dispose();
+                await Task.Delay(200);
+
                 Message?.Invoke("Lidar를 정상적으로 종료합니다.");
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine("Lidar 종료 중 오류가 발생했습니다: " + ex.Message);
-                Message?.Invoke("Lidar 종료 중 오류가 발생했습니다: " + ex.Message);
+                //Debug.WriteLine("Lidar 종료 중 오류가 발생했습니다: " + ex.Message);
+                Message?.Invoke("Lidar 종료 중 오류가 발생했습니다.");
             }
-            
+
         }
 
         private async void Timer_Tick(object sender, EventArgs e)
         {
-
-            await Task.Run(() =>
+            try
             {
-                // Lidar 데이터 수신 주기마다 실행되는 코드
-                // Lidar 데이터 처리 및 표시 등을 수행할 수 있습니다.
-                // 여기서는 간단히 수신된 데이터를 콘솔에 출력하는 예제입니다.
-                List<Measure> measures = new List<Measure>(); //Measures list
-                string sample_second = rplidar.measure_second.ToString();
-
-                lock (rplidar.Measure_List)
+                await Task.Run(() =>
                 {
-                    foreach (Measure m in rplidar.Measure_List) //Copy Measure List
+                    // Lidar 데이터 수신 주기마다 실행되는 코드
+                    // Lidar 데이터 처리 및 표시 등을 수행할 수 있습니다.
+                    // 여기서는 간단히 수신된 데이터를 콘솔에 출력하는 예제입니다.
+                    List<Measure> measures = new List<Measure>(); //Measures list
+                    string sample_second = rplidar.measure_second.ToString();
+
+                    lock (rplidar.Measure_List)
                     {
-                        //filter
-                        if (!(m.distance > 50)) continue;
+                        foreach (Measure m in rplidar.Measure_List) //Copy Measure List
+                        {
 
-                        measures.Add(m);
+                            if (cts != null && cts.IsCancellationRequested) throw new TaskCanceledException();
+                            //filter
+                            if (!(m.distance > 50)) continue;
+
+                            measures.Add(m);
+                        }
+                        SendPoints?.Invoke(measures);
+
+                        rplidar?.Measure_List?.Clear(); //Clear original List
                     }
-                    SendPoints?.Invoke(measures);
+                });
+            }
+            catch (TaskCanceledException ex)
+            {
+                Message?.Invoke("라이다 데이터 수신 작업 취소 :" + ex.Message);
+                timer?.Stop();
 
-                    rplidar.Measure_List.Clear(); //Clear original List
-                }
-            });
+                timer.Elapsed -= Timer_Tick;
+                timer?.Dispose();
+
+                rplidar?.Stop_Scan(); //Stop Scan Thread
+                rplidar?.CloseSerial(); //Close serial port
+            }
+            catch (Exception ex)
+            {
+                Message?.Invoke("라이다 데이터 수신 작업 오류 발생 :" + ex.Message);
+                timer?.Stop();
+
+                timer.Elapsed -= Timer_Tick;
+                timer?.Dispose();
+
+                rplidar?.Stop_Scan(); //Stop Scan Thread
+                rplidar?.CloseSerial(); //Close serial port
+            }
         }
         #endregion
         #region - IHanldes -
@@ -129,14 +158,16 @@ namespace Wpf.Rplidar.Solution.Services
         #region - Properties -
         #endregion
         #region - Attributes -
-        private DispatcherTimer timer;
         private RPLidarA1class rplidar;
+        private System.Timers.Timer timer;
 
         public delegate void EventDele(string msg);
         public event EventDele Message;
 
         public delegate Task SendDele(List<Measure> measures);
         public event SendDele SendPoints;
+
+        public CancellationTokenSource cts;
         #endregion
     }
 }

@@ -61,19 +61,18 @@ namespace Wpf.Rplidar.Solution.ViewModels
             NotifyOfPropertyChange(() => SerialPorts);
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             ClickToDisconnect();
-            await Task.Delay(1000);
             _eventAggregator.Unsubscribe(this);
-            await VisualViewModel.DeactivateAsync(true);
-            await base.OnDeactivateAsync(close, cancellationToken);
+            VisualViewModel.DeactivateAsync(true);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
         #endregion
         #region - Binding Methods -
         #endregion
         #region - Processes -
-        private void _lidarService_Message(string msg)
+        private void _lidarService_Message(string msg, string status)
         {
             System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
             {
@@ -81,6 +80,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 // For example, update a TextBlock's Text property:
                 int id = LogProvider?.Count() == null ? 0 : LogProvider.Count() + 1;
                 LogProvider.Add(new LogViewModel(new LogModel(id, DateTime.Now, EnumLogType.INFO, msg)));
+                Status = status;
             });
             
         }

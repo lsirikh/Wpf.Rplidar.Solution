@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wpf.Rplidar.Solution", "Wpf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RPLidarA1", "RPLidarA1\RPLidarA1.csproj", "{81CFDB1B-1106-4C89-8DEE-CBD5B4FBDD96}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZoomAndPan", "ZoomAndPan\ZoomAndPan.csproj", "{468ADEDE-6F5E-40C0-99C9-C6DAC4FAC934}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{81CFDB1B-1106-4C89-8DEE-CBD5B4FBDD96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81CFDB1B-1106-4C89-8DEE-CBD5B4FBDD96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81CFDB1B-1106-4C89-8DEE-CBD5B4FBDD96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{468ADEDE-6F5E-40C0-99C9-C6DAC4FAC934}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{468ADEDE-6F5E-40C0-99C9-C6DAC4FAC934}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{468ADEDE-6F5E-40C0-99C9-C6DAC4FAC934}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{468ADEDE-6F5E-40C0-99C9-C6DAC4FAC934}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

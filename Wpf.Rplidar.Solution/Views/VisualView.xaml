@@ -5,11 +5,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Wpf.Rplidar.Solution.Views"
 			 xmlns:utils="clr-namespace:Wpf.Rplidar.Solution.Utils"
+			 xmlns:cal="http://www.caliburnproject.org"
+			 xmlns:control="clr-namespace:ZoomAndPan;assembly=ZoomAndPan"
              mc:Ignorable="d"
 			 d:Background="Gray"
-             d:DesignHeight="700" d:DesignWidth="800">
+             >
 	<UserControl.Resources>
 		<utils:OffsetConverter x:Key="OffsetConverter"/>
+		<utils:HalfValueConverter x:Key="HalfValueConverter"/>
 
 		<Style TargetType="TextBlock" x:Key="TextBlockStyle">
 			<Setter Property="FontSize" Value="15" />
@@ -23,88 +26,123 @@
 			<Setter Property="FontWeight" Value="Bold" />
 			<Setter Property="Margin" Value="5"/>
 			<Setter Property="VerticalAlignment" Value="Center"/>
+			<Setter Property="HorizontalAlignment" Value="Stretch"/>
 			<Setter Property="TextAlignment" Value="Center"/>
 		</Style>
 	</UserControl.Resources>
-	<!--<Canvas Background="#88000000"
-			Width="1080" Height="800"
-					ClipToBounds="True">
-		<ItemsControl ItemsSource="{Binding Geometry, UpdateSourceTrigger=PropertyChanged}">
-			<ItemsControl.ItemsPanel>
-				<ItemsPanelTemplate>
-					<Canvas/>
-				</ItemsPanelTemplate>
-			</ItemsControl.ItemsPanel>
-			<ItemsControl.ItemTemplate>
-				<DataTemplate>
-					<Ellipse Width="3" Height="3" Fill="WhiteSmoke">
-						<Ellipse.RenderTransform>
-							<TranslateTransform X="{Binding X}" Y="{Binding Y}"/>
-						</Ellipse.RenderTransform>
-					</Ellipse>
-				</DataTemplate>
-			</ItemsControl.ItemTemplate>
-			<ItemsControl.ItemContainerStyle>
-				<Style>
-					<Setter Property="Canvas.Left" Value="{Binding X}"/>
-					<Setter Property="Canvas.Top" Value="{Binding Y}"/>
-				</Style>
-			</ItemsControl.ItemContainerStyle>
-		</ItemsControl>
-	</Canvas>-->
+
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
-		<Viewbox Grid.Row="0">
-			<Canvas  Width="1000" Height="600" Background="#88000000" ClipToBounds="True">
-				<Path Stroke="Black" StrokeThickness="1" Data="{Binding Geometry, UpdateSourceTrigger=PropertyChanged}">
-					<Path.RenderTransform>
-						<TransformGroup>
-							<ScaleTransform ScaleX="-1"/>
-							<TranslateTransform X="1000"/>
-						</TransformGroup>
-					</Path.RenderTransform>
-				</Path>
-				<Ellipse Width="10" Height="10" StrokeThickness="1"
-						 Fill="Red"
-						 Stroke="Red">
-					<Ellipse.RenderTransform>
-						<TranslateTransform X="500" 
-											Y="300"/>
-					</Ellipse.RenderTransform>
-				</Ellipse>
-			</Canvas>
-		</Viewbox>
-		<Grid Grid.Row="1">
-			
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="*"/>
-				<ColumnDefinition Width="*"/>
-			</Grid.ColumnDefinitions>
-			<TextBlock Grid.Column="0"
-					   Text="X Offset"
-					   Style="{StaticResource TextBlockStyle}"/>
-			<TextBox Grid.Column="1"
-					 Style="{StaticResource TextBoxStyle}"
-					 Text="{Binding XOffset, UpdateSourceTrigger=LostFocus}"/>
-			<TextBlock Grid.Column="2"
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="Auto"/>
+			<ColumnDefinition Width="200"
+							  MinWidth="100"
+							  MaxWidth="200"
+						   />
+		</Grid.ColumnDefinitions>
+		<ScrollViewer
+			Width="Auto" Height="1000"
+			Grid.Column="0" 
+			x:Name="scroller"
+			CanContentScroll="True"
+			VerticalScrollBarVisibility="Visible"
+			HorizontalScrollBarVisibility="Visible"
+			>
+
+			<control:ZoomAndPanControl ContentScale="{Binding ContentScale}" ContentOffsetX="{Binding ContentOffsetX}" ContentOffsetY="{Binding ContentOffsetY}"
+								   x:Name="ZoomAndPanControl"
+								   cal:Message.Attach="[Event MouseDown] = [Action zoomAndPanControl_MouseDown($source, $eventArgs)]; 
+									[Event MouseUp] = [Action zoomAndPanControl_MouseUp($source, $eventArgs)]; 
+									[Event MouseMove] = [Action zoomAndPanControl_MouseMove($source, $eventArgs)]; 
+									[Event MouseWheel] = [Action zoomAndPanControl_MouseWheel($source, $eventArgs)]">
+				<Canvas Width="{Binding Width}" Height="{Binding Height}" Background="LightGray" x:Name="Canvas">
+					<Canvas.Resources>
+						<DrawingBrush x:Key="GridBrush" TileMode="Tile" Viewport="0,0,40,40" ViewportUnits="Absolute" Stretch="None">
+							<DrawingBrush.Drawing>
+								<GeometryDrawing>
+									<GeometryDrawing.Geometry>
+										<GeometryGroup>
+											<RectangleGeometry Rect="0,0,40,40" />
+											<LineGeometry StartPoint="0,40" EndPoint="40,40" />
+											<LineGeometry StartPoint="40,0" EndPoint="40,40" />
+										</GeometryGroup>
+									</GeometryDrawing.Geometry>
+									<GeometryDrawing.Pen>
+										<Pen Brush="Gray" Thickness="1" />
+									</GeometryDrawing.Pen>
+								</GeometryDrawing>
+							</DrawingBrush.Drawing>
+						</DrawingBrush>
+					</Canvas.Resources>
+					<Rectangle Fill="{StaticResource GridBrush}" Width="{Binding ElementName=Canvas, Path=ActualWidth}" Height="{Binding ElementName=Canvas, Path=ActualHeight}" />
+					<!-- Add your content here -->
+					<Path Stroke="Black" StrokeThickness="3"  Data="{Binding Geometry, UpdateSourceTrigger=PropertyChanged}"/>
+
+					<Ellipse Width="70" Height="70" StrokeThickness="3"
+							Fill="Red"
+							Stroke="Red">
+						<Ellipse.RenderTransform>
+							<TranslateTransform X="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=ActualWidth, Converter={StaticResource HalfValueConverter}}"
+										Y="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=ActualHeight, Converter={StaticResource HalfValueConverter}}"/>
+						</Ellipse.RenderTransform>
+					</Ellipse>
+				</Canvas>
+			</control:ZoomAndPanControl>
+		</ScrollViewer>
+		<GridSplitter Grid.Column="1"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Stretch"
+                      ResizeBehavior="PreviousAndNext"
+                      Background="DimGray"
+                      Width="2" />
+
+
+		<StackPanel Grid.Column="2"
+					>
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="100"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+						   Text="X Offset"
+						   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding XOffset, UpdateSourceTrigger=LostFocus}"/>
+			</Grid>
+			<Grid>
+
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="100"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
 					   Text="Y Offset"
 					   Style="{StaticResource TextBlockStyle}"/>
-			<TextBox Grid.Column="3"
+				<TextBox Grid.Column="1"
 					 Style="{StaticResource TextBoxStyle}"
 					 Text="{Binding YOffset, UpdateSourceTrigger=LostFocus}"/>
-			<TextBlock Grid.Column="4"
+			</Grid>
+			<Grid>
+
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="100"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
 					   Text="Scale"
 					   Style="{StaticResource TextBlockStyle}"/>
-			<TextBox Grid.Column="5"
+				<TextBox Grid.Column="1"
 					 Style="{StaticResource TextBoxStyle}"
 					 Text="{Binding Scale, UpdateSourceTrigger=LostFocus}"/>
-		</Grid>
+			</Grid>
+			
+			
+		</StackPanel>
 	</Grid>
 </UserControl>

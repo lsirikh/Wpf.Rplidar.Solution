@@ -37,7 +37,7 @@ namespace Wpf.Rplidar.Solution.Services
         #region - Processes -
         public void InitSerial(string comport)
         {
-            
+
             cts = new CancellationTokenSource();
 
             // 시리얼 포트 설정
@@ -47,14 +47,14 @@ namespace Wpf.Rplidar.Solution.Services
             rplidar = new RPLidarA1class();
 
             //Debug.WriteLine("COM 포트 연결을 시도합니다.");
-            Message?.Invoke("COM 포트 연결을 시도합니다.");
+            Message?.Invoke("COM 포트 연결을 시도합니다.", "연결 시도");
 
             try
             {
                 // 시리얼 포트 열기
                 bool result = rplidar.ConnectSerial(portName); //Open Serial Port COM1
                 //Debug.WriteLine("COM 포트 연결 성공");
-                Message?.Invoke("COM 포트 연결 성공");
+                Message?.Invoke("COM 포트 연결 성공", "연결 성공");
 
                 // DispatcherTimer를 사용하여 데이터 수신 주기 설정
                 timer = new System.Timers.Timer();
@@ -65,18 +65,17 @@ namespace Wpf.Rplidar.Solution.Services
                 string snum = rplidar.SerialNum(); //Get RPLidar Info
 
                 //Debug.WriteLine($"Lidar Info : {snum}");
-                Message?.Invoke($"Lidar Info : {snum}");
-
                 if (!rplidar.BoostScan()) //Start BoostScan
                 {
                     rplidar.CloseSerial(); //On scan error close serial port
                     return;
                 }
+                Message?.Invoke($"Lidar Info : {snum}", "라이다 동작 중");
             }
             catch (Exception ex)
             {
                 //Debug.WriteLine("Lidar 셋업 중 오류가 발생했습니다: " + ex.Message);
-                Message?.Invoke("Lidar 셋업 중 오류가 발생했습니다: " + ex.Message);
+                Message?.Invoke("Lidar 셋업 중 오류가 발생했습니다: " + ex.Message, "오류 발생");
             }
         }
 
@@ -85,27 +84,29 @@ namespace Wpf.Rplidar.Solution.Services
             try
             {
                 // 시리얼 포트 닫기
-                if (!cts.IsCancellationRequested)
+                if (cts != null && !cts.IsCancellationRequested)
                     cts?.Cancel();
                 cts?.Dispose();
                 await Task.Delay(200);
 
-                Message?.Invoke("Lidar를 정상적으로 종료합니다.");
+                Message?.Invoke("Lidar를 정상적으로 종료합니다.", "라이다 종료");
             }
             catch
             {
                 //Debug.WriteLine("Lidar 종료 중 오류가 발생했습니다: " + ex.Message);
-                Message?.Invoke("Lidar 종료 중 오류가 발생했습니다.");
+                Message?.Invoke("Lidar 종료 중 오류가 발생했습니다.", "오류 발생");
             }
 
         }
 
         private async void Timer_Tick(object sender, EventArgs e)
         {
-            try
+            await Task.Run(() =>
             {
-                await Task.Run(() =>
+
+                try
                 {
+
                     // Lidar 데이터 수신 주기마다 실행되는 코드
                     // Lidar 데이터 처리 및 표시 등을 수행할 수 있습니다.
                     // 여기서는 간단히 수신된 데이터를 콘솔에 출력하는 예제입니다.
@@ -119,7 +120,7 @@ namespace Wpf.Rplidar.Solution.Services
 
                             if (cts != null && cts.IsCancellationRequested) throw new TaskCanceledException();
                             //filter
-                            if (!(m.distance > 50)) continue;
+                            if (!(m.distance > 150)) continue;
 
                             measures.Add(m);
                         }
@@ -127,30 +128,32 @@ namespace Wpf.Rplidar.Solution.Services
 
                         rplidar?.Measure_List?.Clear(); //Clear original List
                     }
-                });
-            }
-            catch (TaskCanceledException ex)
-            {
-                Message?.Invoke("라이다 데이터 수신 작업 취소 :" + ex.Message);
-                timer?.Stop();
 
-                timer.Elapsed -= Timer_Tick;
-                timer?.Dispose();
+                }
+                catch (TaskCanceledException ex)
+                {
+                    Message?.Invoke("라이다 데이터 수신 작업 취소 :" + ex.Message, "오류 발생");
+                    timer?.Stop();
 
-                rplidar?.Stop_Scan(); //Stop Scan Thread
-                rplidar?.CloseSerial(); //Close serial port
-            }
-            catch (Exception ex)
-            {
-                Message?.Invoke("라이다 데이터 수신 작업 오류 발생 :" + ex.Message);
-                timer?.Stop();
+                    timer.Elapsed -= Timer_Tick;
+                    timer?.Dispose();
 
-                timer.Elapsed -= Timer_Tick;
-                timer?.Dispose();
+                    rplidar?.Stop_Scan(); //Stop Scan Thread
+                    rplidar?.CloseSerial(); //Close serial port
+                }
+                catch (Exception ex)
+                {
+                    Message?.Invoke("라이다 데이터 수신 작업 오류 발생 :" + ex.Message, "오류 발생");
+                    timer?.Stop();
 
-                rplidar?.Stop_Scan(); //Stop Scan Thread
-                rplidar?.CloseSerial(); //Close serial port
-            }
+                    timer.Elapsed -= Timer_Tick;
+                    timer?.Dispose();
+
+                    rplidar?.Stop_Scan(); //Stop Scan Thread
+                    rplidar?.CloseSerial(); //Close serial port
+                }
+
+            });
         }
         #endregion
         #region - IHanldes -
@@ -161,7 +164,7 @@ namespace Wpf.Rplidar.Solution.Services
         private RPLidarA1class rplidar;
         private System.Timers.Timer timer;
 
-        public delegate void EventDele(string msg);
+        public delegate void EventDele(string msg, string status);
         public event EventDele Message;
 
         public delegate Task SendDele(List<Measure> measures);

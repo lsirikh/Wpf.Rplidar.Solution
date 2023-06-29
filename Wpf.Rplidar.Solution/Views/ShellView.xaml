@@ -35,8 +35,11 @@
     <Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
 			<RowDefinition Height="Auto"/>
-			<RowDefinition Height="2*"/>
+			<RowDefinition Height="300"
+						   MaxHeight="250"
+						   MinHeight="50"/>
 		</Grid.RowDefinitions>
 		<Grid Grid.Row="0">
 			<Grid.ColumnDefinitions>
@@ -73,36 +76,21 @@
 					Style="{StaticResource ButtonStyle}"
 					Content="Disconnect"/>
 		</Grid>
-		<!--<Canvas Background="#88000000"
-				Grid.Row="1"
-				Width="1000"
-				Height="600"
-				ClipToBounds="True">
-			<ItemsControl ItemsSource="{Binding Points, UpdateSourceTrigger=PropertyChanged}">
-				<ItemsControl.ItemsPanel>
-					<ItemsPanelTemplate>
-						<Canvas/>
-					</ItemsPanelTemplate>
-				</ItemsControl.ItemsPanel>
-				<ItemsControl.ItemTemplate>
-					<DataTemplate>
-						<Ellipse Width="3" Height="3" Fill="WhiteSmoke">
-							<Ellipse.RenderTransform>
-								<TranslateTransform X="{Binding X}" Y="{Binding Y}"/>
-							</Ellipse.RenderTransform>
-						</Ellipse>
-					</DataTemplate>
-				</ItemsControl.ItemTemplate>
-				<ItemsControl.ItemContainerStyle>
-					<Style>
-						<Setter Property="Canvas.Left" Value="{Binding X}"/>
-						<Setter Property="Canvas.Top" Value="{Binding Y}"/>
-					</Style>
-				</ItemsControl.ItemContainerStyle>
-			</ItemsControl>
-		</Canvas>-->
-		<ContentControl Grid.Row="1" x:Name="VisualViewModel"/>
-		<ListView Grid.Row="2"  ItemsSource="{Binding LogProvider}">
+		<!--<Viewbox Grid.Row="1" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Left">
+
+			<ContentControl  x:Name="VisualViewModel"/>
+		</Viewbox>-->
+		<Grid Grid.Row="1">
+			
+			<ContentControl  Grid.Row="1" x:Name="VisualViewModel"/>
+		</Grid>
+		<GridSplitter Grid.Row="2" 
+					  HorizontalAlignment="Stretch"
+                      VerticalAlignment="Top"
+                      ResizeBehavior="PreviousAndNext"
+                      Background="DimGray"
+					  Height="2"/>
+		<ListView Grid.Row="3"  ItemsSource="{Binding LogProvider}">
 			<ListView.ItemTemplate>
 				<DataTemplate>
 					<StackPanel Orientation="Horizontal">

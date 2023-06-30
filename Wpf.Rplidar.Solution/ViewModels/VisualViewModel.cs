@@ -40,7 +40,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
             LidarMaxLength = 6000;
             Width = 16000;
             Height = 16000;
-            Scale = 1d;
+            Scale = 100;
+
+            OffsetAngle = -5d;
             _lidarService.SendPoints += _lidarService_SendPoints;
 
             return base.OnActivateAsync(cancellationToken);
@@ -138,8 +140,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
                 ZoomAndPanControl.ContentOffsetY -= dragOffset.Y;
                 ZoomAndPanControl.ContentOffsetX -= dragOffset.X;
-
                 e.Handled = true;
+                NotifyOfPropertyChange(() => ContentOffsetX);
+                NotifyOfPropertyChange(() => ContentOffsetY);
             }
         }
 
@@ -181,8 +184,15 @@ namespace Wpf.Rplidar.Solution.ViewModels
         /// </summary>
         private void ZoomOut()
         {
-            ZoomAndPanControl.ContentScale -= 0.05;
-            Scale = ZoomAndPanControl.ContentScale;
+            if(ZoomAndPanControl.ContentScale < 0.1)
+            {
+                ZoomAndPanControl.ContentScale -= 0.01;
+            }
+            else
+            {
+                ZoomAndPanControl.ContentScale -= 0.1;
+            }
+            Scale = ZoomAndPanControl.ContentScale * 100;
         }
 
         /// <summary>
@@ -190,8 +200,16 @@ namespace Wpf.Rplidar.Solution.ViewModels
         /// </summary>
         private void ZoomIn()
         {
-            ZoomAndPanControl.ContentScale += 0.05;
-            Scale = ZoomAndPanControl.ContentScale;
+            if (ZoomAndPanControl.ContentScale < 0.1)
+            {
+                ZoomAndPanControl.ContentScale += 0.01;
+            }
+            else
+            {
+                ZoomAndPanControl.ContentScale += 0.1;
+            }
+
+            Scale = ZoomAndPanControl.ContentScale * 100;
         }
 
         #endregion
@@ -242,7 +260,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
                 for (int i = 0; i < points.Count; i++)
                 {
-                    Point point = RotatePointAroundPivot(points[i], new Point(Width/2, Height/2), -5);
+                    Point point = RotatePointAroundPivot(points[i], new Point(Width/2, Height/2), OffsetAngle);
                     if(i == 0)
                     {
                         //ctx.BeginFigure(new Point((point.X + XOffset) / Scale, (point.Y + YOffset) / Scale), true, false);
@@ -376,6 +394,19 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
         }
 
+        private double _offsetAngle;
+
+        public double OffsetAngle
+        {
+            get { return _offsetAngle; }
+            set 
+            { 
+                _offsetAngle = value;
+                NotifyOfPropertyChange(() => OffsetAngle);
+            }
+        }
+
+
         public ZoomAndPanControl ZoomAndPanControl { get; set; }
 
         public double ContentScale
@@ -390,30 +421,18 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
         public double ContentOffsetX
         {
-            get { return _contentOffsetX; }
-            set
-            {
-                _contentOffsetX = value;
-                NotifyOfPropertyChange(() => ContentOffsetX);
-            }
+            get { return ZoomAndPanControl.ContentOffsetX; }
+            
         }
 
         public double ContentOffsetY
         {
-            get { return _contentOffsetY; }
-            set
-            {
-                _contentOffsetY = value;
-                NotifyOfPropertyChange(() => ContentOffsetY);
-            }
+            get { return ZoomAndPanControl.ContentOffsetY; }
+            
         }
 
 
-        public void Pan(double deltaX, double deltaY)
-        {
-            ContentOffsetX += deltaX;
-            ContentOffsetY += deltaY;
-        }
+        
 
 
         //public List<Measure> Points { get; set; } 

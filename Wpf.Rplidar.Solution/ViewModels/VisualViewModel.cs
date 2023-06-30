@@ -13,11 +13,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Services;
 using Wpf.Rplidar.Solution.Utils;
 using Wpf.Rplidar.Solution.Views;
 using ZoomAndPan;
+using static System.Net.Mime.MediaTypeNames;
+using Application = System.Windows.Application;
 
 namespace Wpf.Rplidar.Solution.ViewModels
 {
@@ -38,8 +41,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
         protected override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             LidarMaxLength = 6000;
-            Width = 16000;
-            Height = 16000;
+            Width = 1600;
+            Height = 1600;
             Scale = 100;
 
             OffsetAngle = -5d;
@@ -51,8 +54,38 @@ namespace Wpf.Rplidar.Solution.ViewModels
         protected override void OnViewAttached(object view, object context)
         {
             ZoomAndPanControl = (view as VisualView).ZoomAndPanControl;
+            //Canvas = (view as VisualView).Canvas;
+            //CompositionTarget.Rendering += CompositionTarget_Rendering;
             base.OnViewAttached(view, context);
         }
+
+        //private async void CompositionTarget_Rendering(object sender, EventArgs e)
+        //{
+        //    await Task.Run(() =>
+        //    {
+
+        //        Application.Current.Dispatcher.Invoke(() =>
+        //        {
+        //            RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)6000, (int)6000, 96, 96, PixelFormats.Pbgra32);
+
+        //            DrawingVisual drawingVisual = new DrawingVisual();
+        //            using (DrawingContext drawingContext = drawingVisual.RenderOpen())
+        //            {
+        //                var random = new Random();
+        //                for (int i = 0; i < 3600; i++)
+        //                {
+        //                    drawingContext.DrawEllipse(Brushes.Blue, null, new Point(random.Next(0, 6000), random.Next(0, 6000)), 4 / 2, 4 / 2);
+        //                }
+        //            }
+
+        //            renderTargetBitmap.Render(drawingVisual);
+        //            Images = renderTargetBitmap;
+        //        });
+
+        //        Thread.Sleep(100);
+        //        GC.Collect();
+        //    });
+        //}
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
@@ -219,9 +252,10 @@ namespace Wpf.Rplidar.Solution.ViewModels
             List<Point> points = new List<Point>();
             foreach (Measure measure in measures)
             {
-                var x = measure.X + (Width / 2);
-                var y = Height / 2 - measure.Y;
-
+                //var x = (measure.X + (Width / 2));
+                //var y = (Height / 2 - measure.Y);
+                var x = (measure.X/10) + (Width / 2);
+                var y = Height / 2 - (measure.Y/10);
                 points.Add(new Point(x, y));
             }
 
@@ -249,8 +283,38 @@ namespace Wpf.Rplidar.Solution.ViewModels
             Application.Current.Dispatcher.Invoke(() =>
             {
                 Geometry = GenerateGeometry(points);
+
             });
+            //await GenerateImage(points);
         }
+
+        //private Task GenerateImage(List<Point> points)
+        //{
+        //    return Task.Run(() => 
+        //    {
+        //        Application.Current.Dispatcher.Invoke(() =>
+        //        {
+        //            RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)Width, (int)Height, 96, 96, PixelFormats.Pbgra32);
+
+        //            DrawingVisual drawingVisual = new DrawingVisual();
+        //            using (DrawingContext drawingContext = drawingVisual.RenderOpen())
+        //            {
+        //                var random = new Random();
+        //                foreach (var item in points)
+        //                {
+        //                    drawingContext.DrawEllipse(Brushes.Blue, null, new Point(item.X, item.Y), 4 / 2, 4 / 2);
+        //                }
+        //            }
+
+        //            renderTargetBitmap.Render(drawingVisual);
+        //            Images = renderTargetBitmap;
+
+        //            Thread.Sleep(100);
+        //        });
+                
+        //    });
+            
+        //}
 
         private StreamGeometry GenerateGeometry(List<Point> points)
         {
@@ -408,6 +472,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
 
         public ZoomAndPanControl ZoomAndPanControl { get; set; }
+        //public Canvas Canvas { get; private set; }
 
         public double ContentScale
         {
@@ -432,7 +497,17 @@ namespace Wpf.Rplidar.Solution.ViewModels
         }
 
 
-        
+        private ImageSource _images;
+
+        public ImageSource Images
+        {
+            get { return _images; }
+            set
+            {
+                _images = value;
+                NotifyOfPropertyChange(() => Images);
+            }
+        }
 
 
         //public List<Measure> Points { get; set; } 

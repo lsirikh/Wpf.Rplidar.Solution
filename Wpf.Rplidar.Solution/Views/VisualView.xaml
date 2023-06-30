@@ -8,6 +8,8 @@
 			 xmlns:cal="http://www.caliburnproject.org"
 			 xmlns:control="clr-namespace:ZoomAndPan;assembly=ZoomAndPan"
              mc:Ignorable="d"
+			 d:Width="1200"
+			 d:Height="800"
 			 d:Background="Gray"
              >
 	<UserControl.Resources>
@@ -58,28 +60,30 @@
 									[Event MouseWheel] = [Action zoomAndPanControl_MouseWheel($source, $eventArgs)]">
 				<Canvas Width="{Binding Width}" Height="{Binding Height}" Background="LightGray" x:Name="Canvas">
 					<Canvas.Resources>
-						<DrawingBrush x:Key="GridBrush" TileMode="Tile" Viewport="0,0,40,40" ViewportUnits="Absolute" Stretch="None">
+						<DrawingBrush x:Key="GridBrush" TileMode="Tile" Viewport="0,0,4,4" ViewportUnits="Absolute" Stretch="None">
 							<DrawingBrush.Drawing>
 								<GeometryDrawing>
 									<GeometryDrawing.Geometry>
 										<GeometryGroup>
-											<RectangleGeometry Rect="0,0,40,40" />
-											<LineGeometry StartPoint="0,40" EndPoint="40,40" />
-											<LineGeometry StartPoint="40,0" EndPoint="40,40" />
+											<RectangleGeometry Rect="0,0,4,4" />
+											<LineGeometry StartPoint="0,4" EndPoint="4,4" />
+											<LineGeometry StartPoint="4,0" EndPoint="4,4" />
 										</GeometryGroup>
 									</GeometryDrawing.Geometry>
 									<GeometryDrawing.Pen>
-										<Pen Brush="Gray" Thickness="1" />
+										<Pen Brush="#88000000" Thickness="1" />
 									</GeometryDrawing.Pen>
 								</GeometryDrawing>
 							</DrawingBrush.Drawing>
 						</DrawingBrush>
 					</Canvas.Resources>
-					<Rectangle Fill="{StaticResource GridBrush}" Width="{Binding ElementName=Canvas, Path=ActualWidth}" Height="{Binding ElementName=Canvas, Path=ActualHeight}" />
+					
 					<!-- Add your content here -->
-					<Path Stroke="Black" StrokeThickness="3"  Data="{Binding Geometry, UpdateSourceTrigger=PropertyChanged}"/>
+					<Path Stroke="Black" StrokeThickness="2"  Data="{Binding Geometry, UpdateSourceTrigger=PropertyChanged}"/>
+					<!--<Image x:Name="Image" Source="{Binding Images}"/>-->
+					<Rectangle Fill="{StaticResource GridBrush}" Width="{Binding ElementName=Canvas, Path=ActualWidth}" Height="{Binding ElementName=Canvas, Path=ActualHeight}" />
 
-					<Ellipse Width="70" Height="70" StrokeThickness="3"
+					<Ellipse Width="10" Height="10" StrokeThickness="2"
 							Fill="Red"
 							Stroke="Red">
 						<Ellipse.RenderTransform>
@@ -130,7 +134,7 @@
 						 Style="{StaticResource TextBoxStyle}"
 						 Text="{Binding XOffset, UpdateSourceTrigger=LostFocus}"/>
 				<TextBlock Grid.Column="2"
-					   Text="mm"
+					   Text="cm"
 					   Style="{StaticResource TextBlockStyle}"/>
 			</Grid>
 			<Grid>
@@ -147,7 +151,7 @@
 					 Style="{StaticResource TextBoxStyle}"
 					 Text="{Binding YOffset, UpdateSourceTrigger=LostFocus}"/>
 				<TextBlock Grid.Column="2"
-					   Text="mm"
+					   Text="cm"
 					   Style="{StaticResource TextBlockStyle}"/>
 			</Grid>
 			<Grid>
@@ -181,7 +185,7 @@
 					 Style="{StaticResource TextBoxStyle}"
 					 Text="{Binding Width, UpdateSourceTrigger=LostFocus}"/>
 				<TextBlock Grid.Column="2"
-					   Text="mm"
+					   Text="cm"
 					   Style="{StaticResource TextBlockStyle}"/>
 			</Grid>
 			<Grid>
@@ -198,7 +202,7 @@
 					 Style="{StaticResource TextBoxStyle}"
 					 Text="{Binding Height, UpdateSourceTrigger=LostFocus}"/>
 				<TextBlock Grid.Column="2"
-					   Text="mm"
+					   Text="cm"
 					   Style="{StaticResource TextBlockStyle}"/>
 			</Grid>
 
@@ -217,7 +221,7 @@
 						 Style="{StaticResource TextBoxStyle}"
 						 Text="{Binding ContentOffsetX, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
 				<TextBlock Grid.Column="2"
-					   Text="mm"
+					   Text="cm"
 					   Style="{StaticResource TextBlockStyle}"/>
 			</Grid>
 
@@ -236,7 +240,7 @@
 						 Style="{StaticResource TextBoxStyle}"
 						 Text="{Binding ContentOffsetY, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
 				<TextBlock Grid.Column="2"
-					   Text="mm"
+					   Text="cm"
 					   Style="{StaticResource TextBlockStyle}"/>
 			</Grid>
 		</StackPanel>

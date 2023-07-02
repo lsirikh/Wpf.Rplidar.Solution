@@ -18,8 +18,12 @@ namespace Wpf.Rplidar.Solution.Utils
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if(value == null) return 0;
+
+            double offset = 0d;
+            if(parameter != null) 
+                offset = double.Parse(parameter.ToString());
             
-            double size = double.Parse(value.ToString()) / 2;
+            double size = double.Parse(value.ToString()) / 2 - offset;
             return size;
         }
 

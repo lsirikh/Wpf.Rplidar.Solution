@@ -42,6 +42,7 @@ namespace Wpf.Rplidar.Solution
 
                 builder.RegisterType<VisualViewModel>().SingleInstance();
                 builder.RegisterType<LidarService>().SingleInstance();
+                builder.RegisterType<TcpServerService>().SingleInstance();
             }
             catch (Exception)
             {

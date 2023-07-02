@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO.Ports;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -24,10 +25,12 @@ namespace Wpf.Rplidar.Solution.ViewModels
         #region - Ctors -
         public ShellViewModel(IEventAggregator eventAggregator
                                 , VisualViewModel visualViewModel
-                                , LidarService lidarService)
+                                , LidarService lidarService
+                                , TcpServerService tcpServerService)
         {
             _eventAggregator = eventAggregator;
             _lidarService = lidarService;
+            _tcpServerService = tcpServerService;
             VisualViewModel = visualViewModel;
         }
         #endregion
@@ -41,11 +44,22 @@ namespace Wpf.Rplidar.Solution.ViewModels
             NotifyOfPropertyChange(()=> LogProvider);
             
             _eventAggregator.SubscribeOnUIThread(this);
-            
 
             FindComport();
+            
+            _tcpServerService.Message += _tcpServerService_Message;
             _lidarService.Message += _lidarService_Message;
             VisualViewModel.ActivateAsync();
+
+            _ = Task.Run(async () =>
+            {
+
+                await Task.Delay(5000);
+                IpAddress = IPAddress.Any.ToString();
+                Port = 15000;
+                NotifyOfPropertyChange(() => IpAddress);
+                _tcpServerService.TcpInitialize(IpAddress, Port);
+            });
             return base.OnActivateAsync(cancellationToken);
         }
 
@@ -66,6 +80,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
             ClickToDisconnect();
             _eventAggregator.Unsubscribe(this);
             VisualViewModel.DeactivateAsync(true);
+
+            
+            Thread.Sleep(500);
             return base.OnDeactivateAsync(close, cancellationToken);
         }
         #endregion
@@ -73,6 +90,16 @@ namespace Wpf.Rplidar.Solution.ViewModels
         #endregion
         #region - Processes -
         private void _lidarService_Message(string msg, string status)
+        {
+            AddLogMessage(msg, status);
+        }
+
+        private void _tcpServerService_Message(string msg, string status)
+        {
+            AddLogMessage(msg, status);
+        }
+
+        private void AddLogMessage(string msg, string status)
         {
             System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
             {
@@ -82,8 +109,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 LogProvider.Add(new LogViewModel(new LogModel(id, DateTime.Now, EnumLogType.INFO, msg)));
                 Status = status;
             });
-            
         }
+
 
         public void ClickToConnect()
         {
@@ -98,6 +125,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         {
             //_lidarService.Message -= _lidarService_Message;
             _lidarService.UninitSerial();
+            _tcpServerService.Stop();
         }
         #endregion
         #region - IHanldes -
@@ -129,12 +157,27 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
         }
 
+        private int _port;
+
+        public int Port
+        {
+            get { return _port; }
+            set 
+            { 
+                _port = value;
+                NotifyOfPropertyChange(() => Port);
+            }
+        }
+
+
+        public string IpAddress { get; set; }
 
         #endregion
         #region - Attributes -
         private IEventAggregator _eventAggregator;
         private string _selectedPort;
         private LidarService _lidarService;
+        private TcpServerService _tcpServerService;
         #endregion
     }
 }

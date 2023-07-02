@@ -1,6 +1,7 @@
 ﻿<Application x:Class="Wpf.Rplidar.Solution.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:Wpf.Rplidar.Solution">
     <Application.Resources>
 		<ResourceDictionary>
@@ -8,8 +9,23 @@
 				<ResourceDictionary>
 					<local:Bootstrapper x:Key="Bootstrapper" />
 				</ResourceDictionary>
+				
+				<!-- Material Design -->
+				<md:BundledTheme BaseTheme="Dark"
+									 PrimaryColor="Blue"
+									 SecondaryColor="Cyan" >
+					<md:BundledTheme.MergedDictionaries>
+						<ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml" />
+						<ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+						<ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Primary/MaterialDesignColor.DeepPurple.xaml" />
+						<ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Lime.xaml" />
+						<ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Blue.xaml" />
+						<ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Cyan.xaml" />
+					</md:BundledTheme.MergedDictionaries>
+				</md:BundledTheme>
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 
+		
 	</Application.Resources>
 </Application>

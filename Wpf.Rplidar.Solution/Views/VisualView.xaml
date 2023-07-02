@@ -7,6 +7,7 @@
 			 xmlns:utils="clr-namespace:Wpf.Rplidar.Solution.Utils"
 			 xmlns:cal="http://www.caliburnproject.org"
 			 xmlns:control="clr-namespace:ZoomAndPan;assembly=ZoomAndPan"
+			 xmlns:innerCon="clr-namespace:Wpf.Rplidar.Solution.Controls"
              mc:Ignorable="d"
 			 d:Width="1200"
 			 d:Height="800"
@@ -15,32 +16,43 @@
 	<UserControl.Resources>
 		<utils:OffsetConverter x:Key="OffsetConverter"/>
 		<utils:HalfValueConverter x:Key="HalfValueConverter"/>
+		<utils:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 
-		<Style TargetType="TextBlock" x:Key="TextBlockStyle">
+		<Style TargetType="TextBlock" x:Key="TextBlockStyle" BasedOn="{StaticResource MaterialDesignTextBlock}">
 			<Setter Property="FontSize" Value="15" />
 			<Setter Property="FontWeight" Value="Bold" />
-			<Setter Property="Margin" Value="2 5"/>
+			<Setter Property="Margin" Value="5"/>
 			<Setter Property="VerticalAlignment" Value="Center"/>
 			<Setter Property="TextAlignment" Value="Center"/>
 		</Style>
-		<Style TargetType="TextBox" x:Key="TextBoxStyle">
+		<Style TargetType="TextBox" x:Key="TextBoxStyle" BasedOn="{StaticResource MaterialDesignFloatingHintTextBox}" >
 			<Setter Property="FontSize" Value="15" />
 			<Setter Property="FontWeight" Value="Bold" />
-			<Setter Property="Margin" Value="2 5"/>
+			<Setter Property="Margin" Value="5"/>
 			<Setter Property="VerticalAlignment" Value="Center"/>
-			<Setter Property="HorizontalAlignment" Value="Stretch"/>
 			<Setter Property="TextAlignment" Value="Center"/>
+		</Style>
+		<Style TargetType="ComboBox" x:Key="ComboBoxStyle" BasedOn="{StaticResource MaterialDesignFloatingHintComboBox}">
+			<Setter Property="FontSize" Value="15" />
+			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="Margin" Value="5"/>
+			<Setter Property="Height" Value="30"/>
+			<Setter Property="VerticalAlignment" Value="Center"/>
+		</Style>
+		<Style TargetType="Button" x:Key="ButtonStyle" BasedOn="{StaticResource MaterialDesignFlatAccentBgButton}">
+
+			<Setter Property="Margin" Value="5"/>
 		</Style>
 	</UserControl.Resources>
 
 	<Grid>
-		
+
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="*"/>
 			<ColumnDefinition Width="Auto"/>
-			<ColumnDefinition Width="250"
+			<ColumnDefinition Width="300"
 							  MinWidth="100"
-							  MaxWidth="250"
+							  MaxWidth="350"
 						   />
 		</Grid.ColumnDefinitions>
 		<ScrollViewer
@@ -50,48 +62,89 @@
 			CanContentScroll="True"
 			VerticalScrollBarVisibility="Visible"
 			HorizontalScrollBarVisibility="Visible"
+			cal:Message.Attach="[Event PreviewMouseWheel] = [Action scroller_MouseWheel($source, $eventArgs)];
+			[Event PreviewMouseDown] = [Action scroller_MouseDown($source, $eventArgs)];
+			[Event PreviewMouseUp] = [Action scroller_MouseUp($source, $eventArgs)]; 
+			[Event PreviewMouseMove] = [Action scroller_MouseMove($source, $eventArgs)];
+			"
 			>
 
 			<control:ZoomAndPanControl ContentScale="{Binding ContentScale}" ContentOffsetX="{Binding ContentOffsetX}" ContentOffsetY="{Binding ContentOffsetY}"
-								   x:Name="ZoomAndPanControl"
-								   cal:Message.Attach="[Event MouseDown] = [Action zoomAndPanControl_MouseDown($source, $eventArgs)]; 
-									[Event MouseUp] = [Action zoomAndPanControl_MouseUp($source, $eventArgs)]; 
-									[Event MouseMove] = [Action zoomAndPanControl_MouseMove($source, $eventArgs)]; 
-									[Event MouseWheel] = [Action zoomAndPanControl_MouseWheel($source, $eventArgs)]">
-				<Canvas Width="{Binding Width}" Height="{Binding Height}" Background="LightGray" x:Name="Canvas">
-					<Canvas.Resources>
-						<DrawingBrush x:Key="GridBrush" TileMode="Tile" Viewport="0,0,4,4" ViewportUnits="Absolute" Stretch="None">
-							<DrawingBrush.Drawing>
-								<GeometryDrawing>
-									<GeometryDrawing.Geometry>
-										<GeometryGroup>
-											<RectangleGeometry Rect="0,0,4,4" />
-											<LineGeometry StartPoint="0,4" EndPoint="4,4" />
-											<LineGeometry StartPoint="4,0" EndPoint="4,4" />
-										</GeometryGroup>
-									</GeometryDrawing.Geometry>
-									<GeometryDrawing.Pen>
-										<Pen Brush="#88000000" Thickness="1" />
-									</GeometryDrawing.Pen>
-								</GeometryDrawing>
-							</DrawingBrush.Drawing>
-						</DrawingBrush>
-					</Canvas.Resources>
-					
-					<!-- Add your content here -->
-					<Path Stroke="Black" StrokeThickness="2"  Data="{Binding Geometry, UpdateSourceTrigger=PropertyChanged}"/>
-					<!--<Image x:Name="Image" Source="{Binding Images}"/>-->
-					<Rectangle Fill="{StaticResource GridBrush}" Width="{Binding ElementName=Canvas, Path=ActualWidth}" Height="{Binding ElementName=Canvas, Path=ActualHeight}" />
+								   x:Name="ZoomAndPanControl"   Background="#88000000">
+				<Border BorderThickness="2" BorderBrush="Black" Background="LightGray">
 
-					<Ellipse Width="10" Height="10" StrokeThickness="2"
-							Fill="Red"
-							Stroke="Red">
-						<Ellipse.RenderTransform>
-							<TranslateTransform X="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=ActualWidth, Converter={StaticResource HalfValueConverter}}"
-										Y="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=ActualHeight, Converter={StaticResource HalfValueConverter}}"/>
-						</Ellipse.RenderTransform>
-					</Ellipse>
-				</Canvas>
+					<innerCon:DrawingCanvas Width="{Binding Width}" Height="{Binding Height}" x:Name="canvas" Points="{Binding Points}" Visibility="Visible"
+											SnapsToDevicePixels="True"
+											cal:Message.Attach="[Event MouseMove] = [Action canvas_MouseMove($source, $eventArgs)];
+																[Event MouseLeave] = [Action canvas_MouseLeave($source, $eventArgs)];"
+											>
+						
+						
+						<WrapPanel Width="{Binding Width}" Height="{Binding Height}">
+							<WrapPanel.Resources>
+								<DrawingBrush x:Key="GridBrush" TileMode="Tile" Viewport="0,0,4,4" ViewportUnits="Absolute" Stretch="None">
+									<DrawingBrush.Drawing>
+										<GeometryDrawing>
+											<GeometryDrawing.Geometry>
+												<GeometryGroup>
+													<RectangleGeometry Rect="0,0,4,4" />
+													<LineGeometry StartPoint="0,4" EndPoint="4,4" />
+													<LineGeometry StartPoint="4,0" EndPoint="4,4" />
+												</GeometryGroup>
+											</GeometryDrawing.Geometry>
+											<GeometryDrawing.Pen>
+												<Pen Brush="#88000000" Thickness="1" />
+											</GeometryDrawing.Pen>
+										</GeometryDrawing>
+									</DrawingBrush.Drawing>
+								</DrawingBrush>
+							</WrapPanel.Resources>
+							<WrapPanel.Background>
+								<StaticResource ResourceKey="GridBrush" />
+							</WrapPanel.Background>
+						</WrapPanel>
+						<Ellipse Width="10" Height="10" 
+								 StrokeThickness="2"
+								 Stroke="Red"
+								 Fill="Red"
+							     
+								 >
+							<Ellipse.RenderTransform>
+								<TranslateTransform X="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=ActualWidth, Converter={StaticResource HalfValueConverter}, ConverterParameter=5}"
+											Y="{Binding RelativeSource={RelativeSource AncestorType=Canvas}, Path=ActualHeight, Converter={StaticResource HalfValueConverter}, ConverterParameter=5}"/>
+							</Ellipse.RenderTransform>
+						</Ellipse>
+						<ItemsControl ItemsSource="{Binding Ellipses}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<Canvas IsItemsHost="True"/>
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemContainerStyle>
+								<Style TargetType="ContentPresenter">
+									<Setter Property="Canvas.Left" Value="{Binding X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+									<Setter Property="Canvas.Top" Value="{Binding Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+								</Style>
+							</ItemsControl.ItemContainerStyle>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Ellipse Width="{Binding EllipseWidth}" Height="{Binding EllipseHeight}" Fill="Blue" />
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+
+
+
+						<Polyline Points="{Binding BoundaryPoints, UpdateSourceTrigger=PropertyChanged}"
+								  Stroke="Blue"
+								  StrokeThickness="2"
+								  Fill="#220000FF"
+								  x:Name="relativeScreen"
+								  cal:Message.Attach="[Event MouseMove] = [Action relativeScreen_MouseMove($source, $eventArgs)];
+													[Event MouseLeave] = [Action relativeScreen_MouseLeave($source, $eventArgs)];"
+								  />
+					</innerCon:DrawingCanvas>
+				</Border>
 			</control:ZoomAndPanControl>
 		</ScrollViewer>
 		<GridSplitter Grid.Column="1"
@@ -101,8 +154,19 @@
                       Background="DimGray"
                       Width="2" />
 
-
-		<StackPanel Grid.Column="2">
+		<ScrollViewer Height="800"
+					  Grid.Column="2">
+			
+			<StackPanel Orientation="Vertical">
+			<Border BorderThickness="1" BorderBrush="DimGray"
+					Margin="0 0 0 10">
+				<TextBlock Text="Properties" 
+						   FontSize="20"
+						   Margin="5"
+						   VerticalAlignment="Center"
+						   HorizontalAlignment="Center"
+						   FontWeight="Bold" />
+			</Border>
 			<Grid>
 
 				<Grid.ColumnDefinitions>
@@ -243,6 +307,153 @@
 					   Text="cm"
 					   Style="{StaticResource TextBlockStyle}"/>
 			</Grid>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Current X"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding CurrentX, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Current Y"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding CurrentY, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>
+			
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Relative X"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding RelativeX, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Relative Y"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding RelativeY, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Relative Width"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding RelativeWidth, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Relative Height"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding RelativeHeight, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>
+
+			<!--<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Target Width"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding TargetWidth, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="120"/>
+					<ColumnDefinition Width="100"/>
+					<ColumnDefinition Width="40"/>
+				</Grid.ColumnDefinitions>
+				<TextBlock Grid.Column="0"
+					   Text="Target Height"
+					   Style="{StaticResource TextBlockStyle}"/>
+				<TextBox Grid.Column="1"
+						 IsReadOnly="True"
+						 Style="{StaticResource TextBoxStyle}"
+						 Text="{Binding TargetHeight, Mode=OneWay, UpdateSourceTrigger=LostFocus}"/>
+				<TextBlock Grid.Column="2"
+					   Text="cm"
+					   Style="{StaticResource TextBlockStyle}"/>
+			</Grid>-->
+
+
 		</StackPanel>
+		</ScrollViewer>
 	</Grid>
 </UserControl>

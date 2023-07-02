@@ -25,7 +25,7 @@
         DraggingRectangles,
 
         /// <summary>
-        /// The user is left-mouse-button-dragging to pan the viewport.
+        /// The user is middle-mouse-button-dragging to pan the viewport.
         /// </summary>
         Panning,
 
@@ -33,5 +33,10 @@
         /// The user is holding down shift and left-clicking or right-clicking to zoom in or out.
         /// </summary>
         Zooming,
+
+        /// <summary>
+        /// The user is left-mouse-button draw Rectagle Boundary
+        /// </summary>
+        AddBoundary,
     }
 }

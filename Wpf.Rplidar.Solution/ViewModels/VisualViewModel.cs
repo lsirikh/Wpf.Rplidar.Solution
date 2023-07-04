@@ -64,15 +64,23 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
         private PointCollection CreateBoundary(PointCollection boundaryPoints)
         {
-            var pCollection = new PointCollection(boundaryPoints);
-            (RelativeWidth, RelativeHeight) = CalculateWidthAndHeight(boundaryPoints.ToList<Point>());
-            CreatePathGeometry(boundaryPoints.ToList<Point>());
+            try
+            {
+                var pCollection = new PointCollection(boundaryPoints);
+                (RelativeWidth, RelativeHeight) = CalculateWidthAndHeight(boundaryPoints.ToList<Point>());
+                CreatePathGeometry(boundaryPoints.ToList<Point>());
 
-            var point = pCollection.FirstOrDefault();
-            pCollection.Add(point);
-            IsCompleted = true;
+                var point = pCollection.FirstOrDefault();
+                pCollection.Add(point);
+                IsCompleted = true;
 
-            return pCollection;
+                return pCollection;
+            }
+            catch 
+            {
+                return null;
+            }
+            
         }
 
         protected override void OnViewAttached(object view, object context)
@@ -331,7 +339,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             (RelativeWidth, RelativeHeight) = (0.0d, 0.0d);
             BoundaryPoints.Clear();
             BoundaryPoints = new PointCollection();
-            PathGeometry.Clear();
+            PathGeometry?.Clear();
             IsCompleted = false;
         }
         #endregion
@@ -492,21 +500,31 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
         public (double Width, double Height) CalculateWidthAndHeight(List<Point> points)
         {
-            if (points == null || points.Count < 4)
+            try
             {
-                throw new ArgumentException("At least 4 points are required", nameof(points));
+                if (points != null && points.Count < 4)
+                {
+                    throw new ArgumentException("Exactly 4 points are required", nameof(points));
+                }
+
+
+                double minX = points.Min(point => point.X / DivideOffset);
+                double maxX = points.Max(point => point.X / DivideOffset);
+
+                double minY = points.Min(point => point.Y / DivideOffset);
+                double maxY = points.Max(point => point.Y / DivideOffset);
+
+                double width = maxX - minX;
+                double height = maxY - minY;
+
+                return (width, height);
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine($"Raised Exception in {nameof(CreatePathGeometry)} :" + ex.Message);
+                return (0.0, 0.0);
             }
 
-            double minX = points.Min(point => point.X / DivideOffset);
-            double maxX = points.Max(point => point.X / DivideOffset);
-
-            double minY = points.Min(point => point.Y / DivideOffset);
-            double maxY = points.Max(point => point.Y / DivideOffset);
-
-            double width = maxX - minX;
-            double height = maxY - minY;
-
-            return (width, height);
         }
 
         public Point MapToResolution(double canvasWidth, double canvasHeight, double pointX, double pointY)
@@ -524,19 +542,28 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
         public void CreatePathGeometry(List<Point> points)
         {
-            if (points == null || points.Count != 4)
+            try
             {
-                throw new ArgumentException("Exactly 4 points are required", nameof(points));
-            }
+                PathGeometry = new PathGeometry();
+                if (points == null || points.Count != 4)
+                {
+                    throw new ArgumentException("Exactly 4 points are required", nameof(points));
+                }
 
-            PathGeometry = new PathGeometry();
-            PathFigure pathFigure = new PathFigure();
-            pathFigure.StartPoint = points[0];
-            pathFigure.Segments.Add(new LineSegment(points[1], true));
-            pathFigure.Segments.Add(new LineSegment(points[2], true));
-            pathFigure.Segments.Add(new LineSegment(points[3], true));
-            pathFigure.IsClosed = true;
-            PathGeometry.Figures.Add(pathFigure);
+                
+                PathFigure pathFigure = new PathFigure();
+                pathFigure.StartPoint = points[0];
+                pathFigure.Segments.Add(new LineSegment(points[1], true));
+                pathFigure.Segments.Add(new LineSegment(points[2], true));
+                pathFigure.Segments.Add(new LineSegment(points[3], true));
+                pathFigure.IsClosed = true;
+                PathGeometry.Figures.Add(pathFigure);
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine($"Raised Exception in {nameof(CreatePathGeometry)} :" + ex.Message);
+            }
+            
         }
 
         #endregion
@@ -639,8 +666,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
         }
 
 
-        public ZoomAndPanControl ZoomAndPanControl { get; set; }
-        public DrawingCanvas Canvas { get; private set; }
+        public ZoomAndPanControl ZoomAndPanControl { get; internal set; }
+        public DrawingCanvas Canvas { get; internal set; }
 
         //public Canvas Canvas { get; private set; }
 

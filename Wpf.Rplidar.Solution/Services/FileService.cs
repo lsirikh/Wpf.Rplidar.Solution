@@ -45,6 +45,10 @@ namespace Wpf.Rplidar.Solution.Services
             string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
             _folderPath = appDirectory + @"\Properties";
+
+            CheckDir();
+            CreateFile(CreateFilePath());
+            
         }
 
         private void CheckDir()
@@ -70,56 +74,50 @@ namespace Wpf.Rplidar.Solution.Services
         private string CreateFilePath()
         {
             var fileName = $"properties.ini";
+            
             return _folderPath + @"\" + fileName;
         }
 
+        private void CreateFile(string filePath)
+        {
+            try
+            {
+                FileInfo fi = new FileInfo(filePath);
 
-        //public async Task ProcessWriteAsync(string text)
-        //{
-        //    try
-        //    {
-        //        CheckDir();
+                //폴더 없으면 생성
+                if (fi.Exists == false)
+                    CreateBlankIni(filePath);
+            }
+            catch 
+            {
+            }
+        }
 
-        //        //[2021-06-15 12H]logfile.txt
-        //        var fileName = $"properties.ini";
-        //        string path = _folderPath + @"\" + fileName;
-        //        await WriteTextAsync(path, text);
-        //    }
-        //    catch 
-        //    {
-        //    }
+        private void CreateBlankIni(string filePath)
+        {
+            if (_parser == null)
+                _parser = new FileIniDataParser();
 
-        //}
+            //Get the data
+            _data = new IniData();
 
-        //async Task WriteTextAsync(string path, string text)
-        //{
-        //    _locker = new ReaderWriterLock();
-        //    try
-        //    {
-        //        byte[] encodedText = Encoding.Default.GetBytes(text);
-        //        //FileInfo fi = new FileInfo(path);
+            //Add a new section and some keys
+            _data.Sections.AddSection("Network");
+            _data["Network"].AddKey("IpAddress", "0.0.0.0");
+            _data["Network"].AddKey("Port", "15100");
 
-        //        //locker = new ReaderWriterLock();
-        //        using (var sourceStream =
-        //            new FileStream(path, FileMode.Append, FileAccess.Write,
-        //            FileShare.Read, bufferSize: 4096, useAsync: true))
-        //        {
-        //            sourceStream.Seek(0, SeekOrigin.End);
-        //            //await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
-        //            await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
-        //        }
-        //    }
-        //    catch
-        //    {
-                
-        //    }
-        //    finally
-        //    {
-        //        //locker.ReleaseWriterLock();
-        //    }
+            _data.Sections.AddSection("LidarSetting");
+            _data["LidarSetting"].AddKey("Width", "1600");
+            _data["LidarSetting"].AddKey("Height", "1600");
+            _data["LidarSetting"].AddKey("OffsetAngle", "-5");
+            _data["LidarSetting"].AddKey("XOffset", "0");
+            _data["LidarSetting"].AddKey("YOffset", "0");
+            _data["LidarSetting"].AddKey("DivideOffset", "4.0");
 
+            _data["LidarSetting"].AddKey("Boundary", "");
 
-        //}
+            _parser.WriteFile(filePath, _data);
+        }
 
 
         public void CreateSetupModel(SetupModel model)
@@ -127,6 +125,7 @@ namespace Wpf.Rplidar.Solution.Services
             if(_parser == null)
                 _parser = new FileIniDataParser();
 
+            
             _data = _parser.ReadFile(CreateFilePath());
 
             model.IpAddress = _data["Network"]["IpAddress"].ToString();
@@ -139,15 +138,22 @@ namespace Wpf.Rplidar.Solution.Services
             model.YOffset = double.Parse(_data["LidarSetting"]["YOffset"].ToString());
             model.DivideOffset = double.Parse(_data["LidarSetting"]["DivideOffset"].ToString());
 
-            var pointString = _data["LidarSetting"]["Boundary"].ToString().Split(' ').ToList();
-
-            model.BoundaryPoints.Clear();
-            foreach (var item in pointString)
+            try
             {
-                var pArray = item.ToString().Split(',').ToArray();
-                var point = new Point(double.Parse(pArray[0]), double.Parse(pArray[1]));
-                model.BoundaryPoints.Add(point);
+                var pointString = _data["LidarSetting"]["Boundary"].ToString().Split(' ').ToList();
+
+                model.BoundaryPoints.Clear();
+                foreach (var item in pointString)
+                {
+                    var pArray = item.ToString().Split(',').ToArray();
+                    var point = new Point(double.Parse(pArray[0]), double.Parse(pArray[1]));
+                    model.BoundaryPoints.Add(point);
+                }
             }
+            catch
+            {
+            }
+            
         }
 
         public void SaveSetupModel(SetupModel model)

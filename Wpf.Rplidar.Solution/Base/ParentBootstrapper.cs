@@ -94,7 +94,7 @@ namespace Wpf.Rplidar.Solution.Base
         }
         #endregion
         #region - Attributes -
-        private IContainer _container;
+        protected IContainer _container;
         #endregion
     }
 }

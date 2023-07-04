@@ -1,4 +1,7 @@
 ﻿using Autofac;
+using Caliburn.Micro;
+using IniParser;
+using IniParser.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Wpf.Rplidar.Solution.Base;
+using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Services;
 using Wpf.Rplidar.Solution.ViewModels;
 
@@ -25,7 +29,11 @@ namespace Wpf.Rplidar.Solution
         protected override async void OnStartup(object sender, StartupEventArgs e)
         {
             base.OnStartup(sender, e);
-
+            var fileService = IoC.Get<FileService>();
+            var setupModel = IoC.Get<SetupModel>();
+            fileService.Init();
+            fileService.CreateSetupModel(setupModel);
+            
             await DisplayRootViewForAsync<ShellViewModel>();
         }
 
@@ -43,6 +51,11 @@ namespace Wpf.Rplidar.Solution
                 builder.RegisterType<VisualViewModel>().SingleInstance();
                 builder.RegisterType<LidarService>().SingleInstance();
                 builder.RegisterType<TcpServerService>().SingleInstance();
+                builder.RegisterType<FileService>().SingleInstance();
+
+                var setupModel = new SetupModel();
+                builder.RegisterInstance<SetupModel>(setupModel).SingleInstance();
+
             }
             catch (Exception)
             {

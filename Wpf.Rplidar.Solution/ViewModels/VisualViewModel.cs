@@ -20,6 +20,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Wpf.Rplidar.Solution.Controls;
 using Wpf.Rplidar.Solution.Models;
+using Wpf.Rplidar.Solution.Models.Messages;
 using Wpf.Rplidar.Solution.Services;
 using Wpf.Rplidar.Solution.Utils;
 using Wpf.Rplidar.Solution.ViewModels.Symbols;
@@ -31,15 +32,18 @@ using Application = System.Windows.Application;
 namespace Wpf.Rplidar.Solution.ViewModels
 {
     public class VisualViewModel : BaseViewModel
+        , IHandle<SetupMessageRefresh>
     {
         #region - Ctors -
         public VisualViewModel(IEventAggregator eventAggregator
                                 , LidarService lidarService
-                                , TcpServerService tcpServerService)
+                                , TcpServerService tcpServerService
+                                , SetupModel setupModel)
             : base(eventAggregator)
         {
             _lidarService = lidarService;
             _tcpServerService = tcpServerService;
+            _setupModel = setupModel;
             locker = new object();
         }
         #endregion
@@ -48,18 +52,27 @@ namespace Wpf.Rplidar.Solution.ViewModels
         #region - Overrides -
         protected override Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            LidarMaxLength = 6000;
-            Width = 1600;
-            Height = 1600;
             Scale = 100;
-
-            OffsetAngle = -5d;
+            
             _lidarService.SendPoints += _lidarService_SendPoints;
             Points = new List<Point>();
-            BoundaryPoints = new PointCollection();
 
-            DivideOffset = 4d;
+            BoundaryPoints = CreateBoundary(_setupModel.BoundaryPoints);
+            
             return base.OnActivateAsync(cancellationToken);
+        }
+
+        private PointCollection CreateBoundary(PointCollection boundaryPoints)
+        {
+            var pCollection = new PointCollection(boundaryPoints);
+            (RelativeWidth, RelativeHeight) = CalculateWidthAndHeight(boundaryPoints.ToList<Point>());
+            CreatePathGeometry(boundaryPoints.ToList<Point>());
+
+            var point = pCollection.FirstOrDefault();
+            pCollection.Add(point);
+            IsCompleted = true;
+
+            return pCollection;
         }
 
         protected override void OnViewAttached(object view, object context)
@@ -100,6 +113,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
             else if (mouseButtonDown == MouseButton.Left)
             {
+                if (!_isBoundarySet) return;
                 // Just a plain old left-down initiates panning mode.
                 mouseHandlingMode = MouseHandlingMode.AddBoundary;
             }
@@ -133,10 +147,11 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 }
                 else if(mouseHandlingMode == MouseHandlingMode.AddBoundary)
                 {
+                    
+
                     if (IsCompleted)
                     {
-                        BoundaryPoints = new PointCollection();
-                        PathGeometry.Clear();
+                        ClickToClearBoundary();
                     }
 
                     var ePoint = new EllipseViewModel();
@@ -148,14 +163,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
                     if (BoundaryPoints.Count > 3)
                     {
-                        (RelativeWidth, RelativeHeight)=CalculateWidthAndHeight(BoundaryPoints.ToList<Point>());
-                        CreatePathGeometry(BoundaryPoints.ToList<Point>());
-                        var point = _boundaryPoints.FirstOrDefault();
-                        BoundaryPoints.Add(point);
-                        BoundaryPoints = new PointCollection(BoundaryPoints);
-
+                        BoundaryPoints = CreateBoundary(BoundaryPoints);
                         Ellipses.Clear();
-                        IsCompleted = true;
+                        
                     }
                     else
                     {
@@ -310,6 +320,20 @@ namespace Wpf.Rplidar.Solution.ViewModels
             Scale = ZoomAndPanControl.ContentScale * 100;
         }
 
+
+        public void ClickToSetBoundary()
+        {
+            _isBoundarySet = true;
+        }
+
+        public void ClickToClearBoundary()
+        {
+            (RelativeWidth, RelativeHeight) = (0.0d, 0.0d);
+            BoundaryPoints.Clear();
+            BoundaryPoints = new PointCollection();
+            PathGeometry.Clear();
+            IsCompleted = false;
+        }
         #endregion
         #region - Processes -
         private Task _lidarService_SendPoints(List<Measure> measures)
@@ -514,8 +538,16 @@ namespace Wpf.Rplidar.Solution.ViewModels
             pathFigure.IsClosed = true;
             PathGeometry.Figures.Add(pathFigure);
         }
+
         #endregion
         #region - IHanldes -
+        public Task HandleAsync(SetupMessageRefresh message, CancellationToken cancellationToken)
+        {
+            BoundaryPoints = CreateBoundary(_setupModel.BoundaryPoints);
+            NotifyOfPropertyChange(() => BoundaryPoints);
+            Refresh();
+            return Task.CompletedTask;
+        }
         #endregion
         #region - Properties -
         public StreamGeometry Geometry
@@ -531,50 +563,42 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
         }
 
-        private double _width;
-
         public double Width
         {
-            get { return _width; }
+            get { return _setupModel.Width; }
             set
             {
-                _width = value;
+                _setupModel.Width = value;
                 NotifyOfPropertyChange(() => Width);
             }
         }
 
-        private double _height;
-
         public double Height
         {
-            get { return _height; }
+            get { return _setupModel.Height; }
             set
             {
-                _height = value;
+                _setupModel.Height = value;
                 NotifyOfPropertyChange(() => Height);
             }
         }
 
-        private double _xOffset;
-
         public double XOffset
         {
-            get { return _xOffset; }
+            get { return _setupModel.XOffset; }
             set
             {
-                _xOffset = value;
+                _setupModel.XOffset = value;
                 NotifyOfPropertyChange(() => XOffset);
             }
         }
 
-        private double _yOffset;
-
         public double YOffset
         {
-            get { return _yOffset; }
+            get { return _setupModel.YOffset; }
             set
             {
-                _yOffset = value;
+                _setupModel.YOffset = value;
                 NotifyOfPropertyChange(() => YOffset);
             }
         }
@@ -603,15 +627,13 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 NotifyOfPropertyChange(() => LidarMaxLength);
             }
         }
-
-        private double _offsetAngle;
-
+       
         public double OffsetAngle
         {
-            get { return _offsetAngle; }
+            get { return _setupModel.OffsetAngle; }
             set 
-            { 
-                _offsetAngle = value;
+            {
+                _setupModel.OffsetAngle = value;
                 NotifyOfPropertyChange(() => OffsetAngle);
             }
         }
@@ -707,20 +729,17 @@ namespace Wpf.Rplidar.Solution.ViewModels
         }
 
 
-
-        private PointCollection _boundaryPoints;
-
         public PointCollection BoundaryPoints
         {
-            get { return _boundaryPoints; }
+            get { return _setupModel.BoundaryPoints; }
             set 
             { 
-                _boundaryPoints = value; 
+                _setupModel.BoundaryPoints = value;
                 NotifyOfPropertyChange(() => BoundaryPoints);
             }
         }
 
-        public double DivideOffset { get; private set; }
+        public double DivideOffset => _setupModel.DivideOffset;
 
         private bool _isCompleted;
 
@@ -779,16 +798,16 @@ namespace Wpf.Rplidar.Solution.ViewModels
         #region - Attributes -
         private LidarService _lidarService;
         private TcpServerService _tcpServerService;
+        private SetupModel _setupModel;
         private StreamGeometry geometry;
         private object locker;
 
         private double _contentScale = 1.0;
-        private double _contentOffsetX = 0.0;
-        private double _contentOffsetY = 0.0;
         private MouseHandlingMode mouseHandlingMode;
         private MouseButton mouseButtonDown;
         private Point origZoomAndPanControlMouseDownPoint;
         private Point origContentMouseDownPoint;
+        private bool _isBoundarySet;
         #endregion
     }
 }

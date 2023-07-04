@@ -34,14 +34,21 @@ namespace Wpf.Rplidar.Solution.Services
 
         public async Task StartAsync()
         {
-            _server.Start();
-            Message?.Invoke("Server started...", "서버 작동 시작");
+            try
+            {
+                _server.Start();
+                Message?.Invoke("Server started...", "서버 작동 시작");
 
-            _client = await _server.AcceptTcpClientAsync();
+                _client = await _server.AcceptTcpClientAsync();
 
-            Message?.Invoke("Client was connected", "클라이언트 접속");
-            _stream = _client.GetStream();
-            await SendAsync("Welcom!");
+                Message?.Invoke("Client was connected", "클라이언트 접속");
+                _stream = _client.GetStream();
+                await SendAsync("Welcom!");
+            }
+            catch
+            {
+            }
+            
         }
 
         public async Task<string> ReceiveAsync()

@@ -7,7 +7,7 @@
 		xmlns:cal="http://caliburnmicro.com"
 		xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-		Background="MediumPurple"
+		Background="#99CCFF"
         Title="ShellView" Height="820" Width="1000">
 	<Window.Resources>
 		<Style TargetType="TextBlock" x:Key="TextBlockStyle" BasedOn="{StaticResource MaterialDesignTextBlock}">
@@ -95,6 +95,7 @@
 					   Text="IP Address"
 					   Style="{StaticResource TextBlockStyle}"/>
 			<TextBox Grid.Column="1"
+					 IsReadOnly="False"
 					 Style="{StaticResource TextBoxStyle}"
 					 Text="{Binding IpAddress, UpdateSourceTrigger=LostFocus}"/>
 			
@@ -102,8 +103,18 @@
 					   Text="Port"
 					   Style="{StaticResource TextBlockStyle}"/>
 			<TextBox Grid.Column="3"
+					 IsReadOnly="False"
 					 Style="{StaticResource TextBoxStyle}"
 					 Text="{Binding Port, UpdateSourceTrigger=LostFocus}"/>
+
+			<Button Grid.Column="4"
+					x:Name="ClickToLoad"
+					Style="{StaticResource ButtonStyle}"
+					Content="Load"/>
+			<Button Grid.Column="5"
+					x:Name="ClickToSave"
+					Style="{StaticResource ButtonStyle}"
+					Content="Save"/>
 		</Grid>
 		<!--<Viewbox Grid.Row="1" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Left">
 

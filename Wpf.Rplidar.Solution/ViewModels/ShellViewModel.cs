@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Wpf.Rplidar.Solution.Models;
+using Wpf.Rplidar.Solution.Models.Messages;
 using Wpf.Rplidar.Solution.Services;
 using Wpf.Rplidar.Solution.Utils;
 using static System.Net.Mime.MediaTypeNames;
@@ -26,11 +27,15 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public ShellViewModel(IEventAggregator eventAggregator
                                 , VisualViewModel visualViewModel
                                 , LidarService lidarService
+                                , FileService fileService
+                                , SetupModel setupModel
                                 , TcpServerService tcpServerService)
         {
             _eventAggregator = eventAggregator;
             _lidarService = lidarService;
             _tcpServerService = tcpServerService;
+            _fileService = fileService;
+            _setupModel = setupModel;
             VisualViewModel = visualViewModel;
         }
         #endregion
@@ -40,7 +45,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
         protected override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             LogProvider = new ObservableCollection<LogViewModel>();
-
             NotifyOfPropertyChange(()=> LogProvider);
             
             _eventAggregator.SubscribeOnUIThread(this);
@@ -55,10 +59,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             {
 
                 await Task.Delay(5000);
-                IpAddress = IPAddress.Any.ToString();
-                Port = 15000;
-                NotifyOfPropertyChange(() => IpAddress);
-                _tcpServerService.TcpInitialize(IpAddress, Port);
+                _tcpServerService.TcpInitialize(_setupModel.IpAddress, _setupModel.Port);
             });
             return base.OnActivateAsync(cancellationToken);
         }
@@ -78,6 +79,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             ClickToDisconnect();
+            _fileService.Dispose();
             _eventAggregator.Unsubscribe(this);
             VisualViewModel.DeactivateAsync(true);
 
@@ -127,6 +129,19 @@ namespace Wpf.Rplidar.Solution.ViewModels
             _lidarService.UninitSerial();
             _tcpServerService.Stop();
         }
+
+        public void ClickToLoad()
+        {
+            _fileService.CreateSetupModel(_setupModel);
+            Refresh();
+            _eventAggregator.PublishOnUIThreadAsync(new SetupMessageRefresh());
+        }
+
+        public void ClickToSave()
+        {
+            _fileService.SaveSetupModel(_setupModel);
+           
+        }
         #endregion
         #region - IHanldes -
         #endregion
@@ -157,20 +172,26 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
         }
 
-        private int _port;
+        public string IpAddress
+        {
+            get { return _setupModel.IpAddress; }
+            set
+            {
+                _setupModel.IpAddress = value;
+                NotifyOfPropertyChange(() => IpAddress);
+            }
+        }
 
         public int Port
         {
-            get { return _port; }
+            get { return _setupModel.Port; }
             set 
-            { 
-                _port = value;
+            {
+                _setupModel.Port = value;
                 NotifyOfPropertyChange(() => Port);
             }
         }
 
-
-        public string IpAddress { get; set; }
 
         #endregion
         #region - Attributes -
@@ -178,6 +199,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
         private string _selectedPort;
         private LidarService _lidarService;
         private TcpServerService _tcpServerService;
+        private FileService _fileService;
+        private SetupModel _setupModel;
         #endregion
     }
 }

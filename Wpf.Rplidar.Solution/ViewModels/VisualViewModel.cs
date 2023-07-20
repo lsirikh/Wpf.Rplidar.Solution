@@ -1,4 +1,5 @@
 ﻿using Caliburn.Micro;
+using Newtonsoft.Json;
 using RPLidarA1;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Wpf.Libaries.ServerService.Services;
 using Wpf.Rplidar.Solution.Controls;
 using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Models.Messages;
@@ -39,7 +41,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                                 , LidarService lidarService
                                 , TcpServerService tcpServerService
                                 , SetupModel setupModel)
-            : base(eventAggregator)
+                                 : base(eventAggregator)
         {
             _lidarService = lidarService;
             _tcpServerService = tcpServerService;
@@ -421,9 +423,15 @@ namespace Wpf.Rplidar.Solution.ViewModels
                             //Transfer Service
                             var originPoint = BoundaryPoints.FirstOrDefault();
                             var newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
-                            var model = new LidarDataModel(RelativeWidth, RelativeHeight, newPoint.X, newPoint.Y);
-                            _tcpServerService.SendAsync(model);
-                            //Debug.WriteLine($"({(point.X - originPoint.X) / DivideOffset}, {(point.Y - originPoint.Y) / DivideOffset}) => 수집된 위치는 영역에 포함됩니다.!!");
+                            var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2), Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
+                            //var model = @"{
+                            //            'width' : ,
+                            //            'height' : ,
+                            //            'x' : ,
+                            //            'y' : ,
+                            //            }";
+                            _tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
+                           
                         }
                     });
                 }

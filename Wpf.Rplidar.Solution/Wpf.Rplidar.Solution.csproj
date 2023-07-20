@@ -182,7 +182,6 @@
     <Compile Include="Models\SetupModel.cs" />
     <Compile Include="Services\FileService.cs" />
     <Compile Include="Services\LidarService.cs" />
-    <Compile Include="Services\TcpServerService.cs" />
     <Compile Include="Utils\EnumLogType.cs" />
     <Compile Include="Utils\HalfValueConverter.cs" />
     <Compile Include="Utils\MouseHandingMode.cs" />
@@ -233,6 +232,10 @@
     <ProjectReference Include="..\RPLidarA1\RPLidarA1.csproj">
       <Project>{81cfdb1b-1106-4c89-8dee-cbd5b4fbdd96}</Project>
       <Name>RPLidarA1</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wpf.Libaries.ServerService\Wpf.Libaries.ServerService.csproj">
+      <Project>{5c9f77cc-6be0-4f18-8221-cd98ef959240}</Project>
+      <Name>Wpf.Libaries.ServerService</Name>
     </ProjectReference>
     <ProjectReference Include="..\ZoomAndPan\ZoomAndPan.csproj">
       <Project>{468adede-6f5e-40c0-99c9-c6dac4fac934}</Project>

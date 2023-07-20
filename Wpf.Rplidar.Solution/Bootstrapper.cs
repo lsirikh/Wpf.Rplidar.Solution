@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Wpf.Libaries.ServerService.Models;
+using Wpf.Libaries.ServerService.Services;
 using Wpf.Rplidar.Solution.Base;
 using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Services;
@@ -34,6 +36,7 @@ namespace Wpf.Rplidar.Solution
             fileService.Init();
             fileService.CreateSetupModel(setupModel);
             
+
             await DisplayRootViewForAsync<ShellViewModel>();
         }
 
@@ -50,11 +53,12 @@ namespace Wpf.Rplidar.Solution
 
                 builder.RegisterType<VisualViewModel>().SingleInstance();
                 builder.RegisterType<LidarService>().SingleInstance();
-                builder.RegisterType<TcpServerService>().SingleInstance();
                 builder.RegisterType<FileService>().SingleInstance();
 
                 var setupModel = new SetupModel();
-                builder.RegisterInstance<SetupModel>(setupModel).SingleInstance();
+                builder.RegisterInstance(setupModel).SingleInstance();
+
+                builder.RegisterType<TcpServerService>().SingleInstance();
 
             }
             catch (Exception)

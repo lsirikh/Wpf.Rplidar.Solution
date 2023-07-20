@@ -13,6 +13,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
+using Wpf.Libaries.ServerService.Models;
+using Wpf.Libaries.ServerService.Services;
+using Wpf.Libaries.ServerService.Utils;
 using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Models.Messages;
 using Wpf.Rplidar.Solution.Services;
@@ -29,13 +33,14 @@ namespace Wpf.Rplidar.Solution.ViewModels
                                 , LidarService lidarService
                                 , FileService fileService
                                 , SetupModel setupModel
-                                , TcpServerService tcpServerService)
+                                , TcpServerService tcpServerService
+            )
         {
             _eventAggregator = eventAggregator;
             _lidarService = lidarService;
-            _tcpServerService = tcpServerService;
             _fileService = fileService;
             _setupModel = setupModel;
+            _tcpServerService = tcpServerService;
             VisualViewModel = visualViewModel;
         }
         #endregion
@@ -51,17 +56,44 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
             FindComport();
             
-            _tcpServerService.Message += _tcpServerService_Message;
             _lidarService.Message += _lidarService_Message;
             VisualViewModel.ActivateAsync();
 
+            _tcpServerService.Connected += _tcpServerService_Connected;
+            _tcpServerService.Received += _tcpServerService_Received;
+            _tcpServerService.Disconnected += _tcpServerService_Disconnected;
+
             _ = Task.Run(async () =>
             {
+                await Task.Delay(2000);
+                var serverModel = new TcpServerModel();
 
-                await Task.Delay(5000);
-                _tcpServerService.TcpInitialize(_setupModel.IpAddress, _setupModel.Port);
+                serverModel.IpAddress = _setupModel.IpAddress;
+                serverModel.Port = _setupModel.Port;
+                serverModel.HeartBeat = 1000;
+                _tcpServerService.InitSocket(serverModel);
             });
+
             return base.OnActivateAsync(cancellationToken);
+        }
+
+        private void _tcpServerService_Disconnected(object sender, EventArgs e)
+        {
+            if (!(e is TcpEventArgs args)) return;
+            
+            AddLogMessage($"Client({args.EndPoint.Address}:{args.EndPoint.Port}) was disonnected", $"Client Disconnection");
+        }
+
+        private void _tcpServerService_Received(object sender, EventArgs e)
+        {
+
+        }
+
+        private void _tcpServerService_Connected(object sender, EventArgs e)
+        {
+            if (!(e is TcpEventArgs args)) return;
+
+            AddLogMessage($"Client({args.EndPoint.Address}:{args.EndPoint.Port}) was Connected", $"Client Connection");
         }
 
         private void FindComport()
@@ -127,7 +159,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         {
             //_lidarService.Message -= _lidarService_Message;
             _lidarService.UninitSerial();
-            _tcpServerService.Stop();
+            _tcpServerService.CloseSocket();
         }
 
         public void ClickToLoad()

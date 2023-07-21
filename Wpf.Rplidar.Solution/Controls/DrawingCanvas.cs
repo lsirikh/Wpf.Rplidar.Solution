@@ -74,7 +74,7 @@ namespace Wpf.Rplidar.Solution.Controls
 
         public DrawingCanvas()
         {
-            var timer = new System.Timers.Timer(300);
+            var timer = new System.Timers.Timer(150);
             try
             {
                 timer.Elapsed += (sender, e) =>
@@ -85,6 +85,7 @@ namespace Wpf.Rplidar.Solution.Controls
                     {
                         InvalidateVisual();
                     });
+
                 };
                 timer.Start();
             }
@@ -105,14 +106,11 @@ namespace Wpf.Rplidar.Solution.Controls
         {
             try
             {
-                lock (locker)
+                foreach (var item in Points)
                 {
-                    foreach (var item in Points)
-                    {
-                        dc.DrawEllipse(Brushes.Gray, _pen, new Point(item.X, item.Y), 2, 2);
-                    }
-                    Points.Clear();
+                    dc.DrawEllipse(Brushes.Gray, _pen, new Point(item.X, item.Y), 2, 2);
                 }
+                Points.Clear();
             }
             catch
             {

@@ -10,6 +10,10 @@ using System.Threading;
 using System.Windows.Controls;
 using System.Collections.Concurrent;
 using System.Collections;
+using System.Text.RegularExpressions;
+using Wpf.Rplidar.Solution.Utils;
+using Wpf.Rplidar.Solution.Models;
+using System.Windows.Media;
 
 namespace Wpf.Rplidar.Solution.Services
 {
@@ -124,7 +128,10 @@ namespace Wpf.Rplidar.Solution.Services
                         {
                             // Lidar 데이터 처리
                             // ...
-                            SendPoints?.Invoke(measures);
+                            //SendPoints?.Invoke(measures);
+                            TransferPoints?.Invoke(this, new PointListArgs(measures));
+                            //TransferGroup?
+                            //.Invoke(this, new GroupListArgs( FindConnectedComponentsAndCenters(measures, 20)));
                         }
                     }
                     Debug.WriteLine($"{nameof(ProcessingThread)} was finished");
@@ -160,6 +167,9 @@ namespace Wpf.Rplidar.Solution.Services
                 cts?.Dispose();
                 await Task.Delay(200);
 
+                rplidar?.Stop_Scan(); //Stop Scan Thread
+                rplidar?.CloseSerial(); //Close serial port
+
                 Message?.Invoke("Lidar를 정상적으로 종료합니다.", "라이다 종료");
             }
             catch
@@ -170,6 +180,57 @@ namespace Wpf.Rplidar.Solution.Services
 
         }
 
+        public List<GroupModel> FindConnectedComponentsAndCenters(List<Measure> measures, double threshold)
+        {
+            List<GroupModel> groups = new List<GroupModel>();
+
+            foreach (var measure in measures)
+            {
+                bool found = false;
+
+                foreach (var group in groups)
+                {
+                    if (IsConnected(group.Measures[0], measure, threshold))
+                    {
+                        group.Measures.Add(measure);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    groups.Add(new GroupModel { Measures = new List<Measure> { measure } });
+                }
+            }
+
+            foreach (var group in groups)
+            {
+                group.Center = CalculateCenter(group.Measures);
+            }
+
+            return groups;
+        }
+
+        private bool IsConnected(Measure m1, Measure m2, double threshold)
+        {
+            double distance = Math.Sqrt(Math.Pow(m1.X - m2.X, 2) + Math.Pow(m1.Y - m2.Y, 2));
+            return distance <= threshold;
+        }
+
+        private Measure CalculateCenter(List<Measure> measures)
+        {
+            double x = 0;
+            double y = 0;
+
+            foreach (var measure in measures)
+            {
+                x += measure.X;
+                y += measure.Y;
+            }
+
+            return new Measure { X = x / measures.Count, Y = y / measures.Count };
+        }
         #endregion
         #region - IHanldes -
         #endregion
@@ -185,10 +246,12 @@ namespace Wpf.Rplidar.Solution.Services
         public delegate void EventDele(string msg, string status);
         public event EventDele Message;
 
-        public delegate Task SendDele(List<Measure> measures);
-        public event SendDele SendPoints;
+        public event EventHandler TransferPoints;
+        public event EventHandler TransferGroup;
 
         public CancellationTokenSource cts;
         #endregion
     }
+
+    
 }

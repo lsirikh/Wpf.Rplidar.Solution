@@ -1,23 +1,25 @@
-﻿using System.Collections.Generic;
-using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Media;
+﻿using RPLidarA1;
+using System.Collections.Generic;
 
 namespace Wpf.Rplidar.Solution.Models
 {
     /****************************************************************************
         Purpose      :                                                           
         Created By   : GHLee                                                
-        Created On   : 7/4/2023 9:42:50 AM                                                    
+        Created On   : 7/25/2023 3:47:55 PM                                                    
         Department   : SW Team                                                   
         Company      : Sensorway Co., Ltd.                                       
         Email        : lsirikh@naver.com                                         
      ****************************************************************************/
 
-    public class SetupModel
+    public class GroupModel
     {
 
         #region - Ctors -
+        public GroupModel()
+        {
+
+        }
         #endregion
         #region - Implementation of Interface -
         #endregion
@@ -30,18 +32,8 @@ namespace Wpf.Rplidar.Solution.Models
         #region - IHanldes -
         #endregion
         #region - Properties -
-        public string IpAddress { get; set; }
-        public int Port { get; set; }
-
-        public double Width { get; set; }
-        public double Height { get; set; }
-        //public List<Point> BoundaryPoints { get; set; } = new List<Point>();
-        public PointCollection BoundaryPoints { get; set; } = new PointCollection();
-        public double OffsetAngle { get; set; }
-        public double XOffset { get; set; }
-        public double YOffset { get; set; }
-        public double DivideOffset { get; set; }
-        public bool SensorLocation { get; set; }
+        public List<Measure> Measures { get; set; }
+        public Measure Center { get; set; }
         #endregion
         #region - Attributes -
         #endregion

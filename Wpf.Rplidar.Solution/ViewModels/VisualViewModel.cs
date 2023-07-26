@@ -56,13 +56,15 @@ namespace Wpf.Rplidar.Solution.ViewModels
         {
             Scale = 100;
             
-            _lidarService.SendPoints += _lidarService_SendPoints;
+            _lidarService.TransferPoints += _lidarService_TransferPoints;
+            //_lidarService.TransferGroup += _lidarService_TransferGroup;
             Points = new List<Point>();
 
             BoundaryPoints = CreateBoundary(_setupModel.BoundaryPoints);
-            
             return base.OnActivateAsync(cancellationToken);
         }
+
+        
 
         private PointCollection CreateBoundary(PointCollection boundaryPoints)
         {
@@ -94,6 +96,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
+            Canvas.Dispose();
+            _lidarService.TransferPoints -= _lidarService_TransferPoints;
+            //_lidarService.TransferGroup -= _lidarService_TransferGroup;
             return base.OnDeactivateAsync(close, cancellationToken);
         }
         #endregion
@@ -344,21 +349,31 @@ namespace Wpf.Rplidar.Solution.ViewModels
             PathGeometry?.Clear();
             IsCompleted = false;
         }
+
+        public void ClickToSetHighPosition()
+        {
+            SensorLocation = true;
+        }
+
+        public void ClickToSetLowPosition()
+        {
+            SensorLocation = false;
+        }
         #endregion
         #region - Processes -
-        private Task _lidarService_SendPoints(List<Measure> measures)
+        private void _lidarService_TransferPoints(object sender, EventArgs e)
         {
+            if (!(e is PointListArgs args)) return;
+
             try
             {
                 ValidCount = 0;
-                if (Points.Count > 0) return Task.CompletedTask;
+                if (Points.Count > 0) return;
 
-                //measures = RemoveNoise(measures, 20, 2);
 
-                foreach (Measure measure in measures)
+                foreach (Measure measure in args.List)
                 {
-                    //var x = (measure.X + (EllipseWidth / 2));
-                    //var y = (EllipseHeight / 2 - measure.Y);
+                    //중점을 기준으로 (x,y) 수평이동
                     var x = (measure.X / 10) + (Width / 2);
                     var y = Height / 2 - (measure.Y / 10);
 
@@ -372,25 +387,31 @@ namespace Wpf.Rplidar.Solution.ViewModels
             {
                 throw;
             }
-            return Task.CompletedTask;
-
-            //UpdatePoints(points);
-            #region Debugging 
-            //return Task.Run(() =>
-            //{
-            //    lock (locker)
-            //    {
-
-            //        Debug.WriteLine($"=====Start=====");
-            //        foreach (var item in measures)
-            //        {
-            //            Debug.WriteLine($"θ:{item.angle}, L:{item.distance}, X:{item.X}, Y:{EllipseHeight - item.Y}");
-            //        }
-            //        Debug.WriteLine($"=====End=====");
-            //    }
-            //});
-            #endregion
         }
+
+        //private void _lidarService_TransferGroup(object sender, EventArgs e)
+        //{
+        //    if (!(e is GroupListArgs args)) return;
+
+        //    try
+        //    {
+        //        foreach (var item in args.List)
+        //        {
+        //            var x = (item.Center.X / 10) + (Width / 2);
+        //            var y = Height / 2 - (item.Center.Y / 10);
+
+        //            var point = RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
+
+        //            _ = CheckPointTask(point);
+        //            Points.Add(point);
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        throw;
+        //    }
+        //}
 
         public List<Measure> RemoveNoise(List<Measure> points, int range, int minPoints)
         {
@@ -422,8 +443,17 @@ namespace Wpf.Rplidar.Solution.ViewModels
                         {
                             //Transfer Service
                             var originPoint = BoundaryPoints.FirstOrDefault();
-                            var newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
-                            var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2), Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
+                            Point newPoint;
+                            if (SensorLocation == true)
+                            {
+                                newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
+                            }
+                            else
+                            {
+                                newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((originPoint.Y - point.Y) / DivideOffset));
+                            }
+                            var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2), 
+                                Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
                             //var model = @"{
                             //            'width' : ,
                             //            'height' : ,
@@ -442,41 +472,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 }
             });
         }
-
-        //private void UpdatePoints(List<Point> points)
-        //{
-        //    Application.Current.Dispatcher.Invoke(() =>
-        //    {
-        //        Geometry = GenerateGeometry(points);
-
-        //    });
-        //}
-
-
-        //private StreamGeometry GenerateGeometry(List<Point> points)
-        //{
-        //    StreamGeometry geometry = new StreamGeometry();
-        //    using (StreamGeometryContext ctx = geometry.Open())
-        //    {
-
-        //        for (int i = 0; i < points.Count; i++)
-        //        {
-        //            Point point = RotatePointAroundPivot(points[i], new Point(Width/2, Height/2), OffsetAngle);
-        //            if(i == 0)
-        //            {
-        //                //ctx.BeginFigure(new Point((point.X + XOffset) / Scale, (point.Y + YOffset) / Scale), true, false);
-        //                ctx.BeginFigure(new Point(point.X, point.Y), true, false);
-        //            }
-
-        //            //var newPoint = new Point((point.X + XOffset) / Scale, (point.Y + YOffset) / Scale);
-        //            var newPoint = new Point(point.X, point.Y);
-        //            ctx.LineTo(newPoint, true, false);
-        //        }
-                
-        //    }
-        //    geometry.Freeze();
-        //    return geometry;
-        //}
 
         public Point RotatePoint(Point point, double theta)
         {
@@ -813,6 +808,15 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
         }
 
+        public bool SensorLocation
+        {
+            get { return _setupModel.SensorLocation; }
+            set 
+            {
+                _setupModel.SensorLocation = value;
+                NotifyOfPropertyChange(() => SensorLocation);
+            }
+        }
 
 
 

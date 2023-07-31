@@ -183,12 +183,14 @@
     <Compile Include="Models\SetupModel.cs" />
     <Compile Include="Services\FileService.cs" />
     <Compile Include="Services\LidarService.cs" />
+    <Compile Include="Utils\ConnectedComponentFinder.cs" />
     <Compile Include="Utils\EnumLogType.cs" />
     <Compile Include="Utils\HalfValueConverter.cs" />
     <Compile Include="Utils\MouseHandingMode.cs" />
     <Compile Include="Utils\NullToVisibilityConverter.cs" />
     <Compile Include="Utils\OffsetConverter.cs" />
     <Compile Include="Utils\CustomArgs.cs" />
+    <Compile Include="Utils\PointComparer.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\Symbols\EllipseViewModel.cs" />
     <Compile Include="ViewModels\VisualViewModel.cs" />

@@ -430,6 +430,50 @@ namespace Wpf.Rplidar.Solution.ViewModels
         }
         
 
+        //private Task CheckPointTask(Point point)
+        //{
+        //    return Task.Run(() =>
+        //    {
+        //        try
+        //        {
+        //            Application.Current?.Dispatcher?.Invoke(() =>
+        //            {
+        //                //var testPoint = new Point(point.X / DivideOffset, point.Y / DivideOffset);
+        //                if (PathGeometry != null && PathGeometry.FillContains(point))
+        //                {
+        //                    //Transfer Service
+        //                    var originPoint = BoundaryPoints.FirstOrDefault();
+        //                    Point newPoint;
+        //                    //if (SensorLocation == true)
+        //                    //{
+        //                    //    newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
+        //                    //}
+        //                    //else
+        //                    //{
+        //                    //    newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((originPoint.Y - point.Y) / DivideOffset));
+        //                    //}
+        //                    newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
+        //                    var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2), 
+        //                        Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
+        //                    //var model = @"{
+        //                    //            'width' : ,
+        //                    //            'height' : ,
+        //                    //            'x' : ,
+        //                    //            'y' : ,
+        //                    //            }";
+        //                    _tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
+                           
+        //                }
+        //            });
+        //        }
+        //        catch (Exception ex)
+        //        {
+
+        //            Debug.WriteLine($"Raised Exception in {nameof(CheckPointTask)} : {ex.Message}");
+        //        }
+        //    });
+        //}
+
         private Task CheckPointTask(Point point)
         {
             return Task.Run(() =>
@@ -441,27 +485,21 @@ namespace Wpf.Rplidar.Solution.ViewModels
                         //var testPoint = new Point(point.X / DivideOffset, point.Y / DivideOffset);
                         if (PathGeometry != null && PathGeometry.FillContains(point))
                         {
-                            //Transfer Service
-                            var originPoint = BoundaryPoints.FirstOrDefault();
-                            Point newPoint;
-                            if (SensorLocation == true)
-                            {
-                                newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
-                            }
-                            else
-                            {
-                                newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((originPoint.Y - point.Y) / DivideOffset));
-                            }
-                            var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2), 
-                                Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
-                            //var model = @"{
-                            //            'width' : ,
-                            //            'height' : ,
-                            //            'x' : ,
-                            //            'y' : ,
-                            //            }";
-                            _tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
-                           
+                            // Transfer Service
+                            var originPoint = BoundaryPoints.FirstOrDefault();  // 첫 번째 경계 점
+                            Point newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
+
+                            points.Add(newPoint);  // 점을 목록에 추가
+
+                            // 연결된 구성 요소를 찾음
+                            var connectedComponentFinder = new ConnectedComponentFinder();
+                            var connectedComponents = connectedComponentFinder.GetConnectedComponents(points, 20);  // 임계값은 20
+
+                            //var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2),
+                            //    Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
+                            
+                            //_tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
+
                         }
                     });
                 }
@@ -472,6 +510,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 }
             });
         }
+
+        List<Point> points = new List<Point>();  // 점들의 목록
 
         public Point RotatePoint(Point point, double theta)
         {

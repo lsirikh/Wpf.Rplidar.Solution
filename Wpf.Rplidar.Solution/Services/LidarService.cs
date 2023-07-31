@@ -180,57 +180,7 @@ namespace Wpf.Rplidar.Solution.Services
 
         }
 
-        public List<GroupModel> FindConnectedComponentsAndCenters(List<Measure> measures, double threshold)
-        {
-            List<GroupModel> groups = new List<GroupModel>();
-
-            foreach (var measure in measures)
-            {
-                bool found = false;
-
-                foreach (var group in groups)
-                {
-                    if (IsConnected(group.Measures[0], measure, threshold))
-                    {
-                        group.Measures.Add(measure);
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    groups.Add(new GroupModel { Measures = new List<Measure> { measure } });
-                }
-            }
-
-            foreach (var group in groups)
-            {
-                group.Center = CalculateCenter(group.Measures);
-            }
-
-            return groups;
-        }
-
-        private bool IsConnected(Measure m1, Measure m2, double threshold)
-        {
-            double distance = Math.Sqrt(Math.Pow(m1.X - m2.X, 2) + Math.Pow(m1.Y - m2.Y, 2));
-            return distance <= threshold;
-        }
-
-        private Measure CalculateCenter(List<Measure> measures)
-        {
-            double x = 0;
-            double y = 0;
-
-            foreach (var measure in measures)
-            {
-                x += measure.X;
-                y += measure.Y;
-            }
-
-            return new Measure { X = x / measures.Count, Y = y / measures.Count };
-        }
+       
         #endregion
         #region - IHanldes -
         #endregion

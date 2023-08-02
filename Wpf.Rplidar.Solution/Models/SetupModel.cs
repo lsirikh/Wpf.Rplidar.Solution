@@ -35,7 +35,7 @@ namespace Wpf.Rplidar.Solution.Models
 
         public double Width { get; set; }
         public double Height { get; set; }
-        //public List<Point> BoundaryPoints { get; set; } = new List<Point>();
+        //public Measures<Point> BoundaryPoints { get; set; } = new Measures<Point>();
         public PointCollection BoundaryPoints { get; set; } = new PointCollection();
         public double OffsetAngle { get; set; }
         public double XOffset { get; set; }

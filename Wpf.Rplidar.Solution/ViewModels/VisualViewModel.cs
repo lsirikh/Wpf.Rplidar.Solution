@@ -21,6 +21,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Wpf.Libaries.ServerService.Services;
 using Wpf.Rplidar.Solution.Controls;
+using Wpf.Rplidar.Solution.Helpers;
 using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Models.Messages;
 using Wpf.Rplidar.Solution.Services;
@@ -40,12 +41,14 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public VisualViewModel(IEventAggregator eventAggregator
                                 , LidarService lidarService
                                 , TcpServerService tcpServerService
+                                , ConnectedComponentFinder connectedComponentFinder
                                 , SetupModel setupModel)
                                  : base(eventAggregator)
         {
             _lidarService = lidarService;
             _tcpServerService = tcpServerService;
             _setupModel = setupModel;
+            _connectedComponentFinder = connectedComponentFinder;
             locker = new object();
         }
         #endregion
@@ -55,7 +58,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
         protected override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             Scale = 100;
-            
+
+
             _lidarService.TransferPoints += _lidarService_TransferPoints;
             //_lidarService.TransferGroup += _lidarService_TransferGroup;
             Points = new List<Point>();
@@ -64,14 +68,14 @@ namespace Wpf.Rplidar.Solution.ViewModels
             return base.OnActivateAsync(cancellationToken);
         }
 
-        
+
 
         private PointCollection CreateBoundary(PointCollection boundaryPoints)
         {
             try
             {
                 var pCollection = new PointCollection(boundaryPoints);
-                (RelativeWidth, RelativeHeight) = CalculateWidthAndHeight(boundaryPoints.ToList<Point>());
+                (RelativeWidth, RelativeHeight) = MathHelper.CalculateWidthAndHeight(boundaryPoints.ToList<Point>(), DivideOffset);
                 CreatePathGeometry(boundaryPoints.ToList<Point>());
 
                 var point = pCollection.FirstOrDefault();
@@ -80,11 +84,11 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
                 return pCollection;
             }
-            catch 
+            catch
             {
                 return null;
             }
-            
+
         }
 
         protected override void OnViewAttached(object view, object context)
@@ -160,9 +164,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
                         ZoomOut();
                     }
                 }
-                else if(mouseHandlingMode == MouseHandlingMode.AddBoundary)
+                else if (mouseHandlingMode == MouseHandlingMode.AddBoundary)
                 {
-                    
+
 
                     if (IsCompleted)
                     {
@@ -180,7 +184,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                     {
                         BoundaryPoints = CreateBoundary(BoundaryPoints);
                         Ellipses.Clear();
-                        
+
                     }
                     else
                     {
@@ -194,7 +198,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
         }
 
-        
+
 
         /// <summary>
         /// Event raised on mouse move in the ZoomAndPanControl.
@@ -218,7 +222,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
                 e.Handled = true;
             }
-           
+
         }
 
 
@@ -307,7 +311,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         /// </summary>
         private void ZoomOut()
         {
-            if(ZoomAndPanControl.ContentScale < 0.1)
+            if (ZoomAndPanControl.ContentScale < 0.1)
             {
                 ZoomAndPanControl.ContentScale -= 0.01;
             }
@@ -371,47 +375,98 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 if (Points.Count > 0) return;
 
 
-                foreach (Measure measure in args.List)
+                //foreach (Measure measure in args.Measures)
+                //{
+                //    //중점을 기준으로 (x,y) 수평이동
+                //    var x = (measure.X / 10) + (Width / 2);
+                //    var y = Height / 2 - (measure.Y / 10);
+
+                //    var point = MathHelper.RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
+
+                //    Points.Add(point);
+                //    _ = CheckPointTask(point);
+                //}
+
+                foreach (var point in args.Points)
                 {
-                    //중점을 기준으로 (x,y) 수평이동
-                    var x = (measure.X / 10) + (Width / 2);
-                    var y = Height / 2 - (measure.Y / 10);
-
-                    var point = RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
-
-                    _ = CheckPointTask(point);
                     Points.Add(point);
+                    
                 }
+
+                _ = CheckPointTask(args.Points);
+
+
             }
             catch (Exception)
             {
                 throw;
             }
+
         }
 
-        //private void _lidarService_TransferGroup(object sender, EventArgs e)
-        //{
-        //    if (!(e is GroupListArgs args)) return;
+        private Task CheckPointTask(List<Point> pList)
+        {
+            lock (locker)
+            {
+                return Task.Run(() =>
+                {
+                    try
+                    {
 
-        //    try
-        //    {
-        //        foreach (var item in args.List)
-        //        {
-        //            var x = (item.Center.X / 10) + (Width / 2);
-        //            var y = Height / 2 - (item.Center.Y / 10);
+                        Application.Current?.Dispatcher?.Invoke(() =>
+                        {
 
-        //            var point = RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
 
-        //            _ = CheckPointTask(point);
-        //            Points.Add(point);
-        //        }
-        //    }
-        //    catch (Exception)
-        //    {
+                            //var testPoint = new Point(point.X / DivideOffset, point.Y / DivideOffset);
+                            points.Clear();
+                            foreach (var point in pList)
+                            {
+                                if (PathGeometry != null && PathGeometry.FillContains(point))
+                                {
+                                    // Transfer Service
+                                    var originPoint = BoundaryPoints.FirstOrDefault();  // 첫 번째 경계 점
+                                    Point newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
 
-        //        throw;
-        //    }
-        //}
+                                    points.Add(newPoint);  // 점을 목록에 추가
+
+
+                                }
+
+
+                            }
+                            // 연결된 구성 요소를 찾음
+                            var connectedComponents = _connectedComponentFinder.GetConnectedComponents(points, 5);  // 임계값은 20
+                            int count = 1;
+                            foreach (var connectedComponent in connectedComponents)
+                            {
+                                // 각 연결된 구성 요소를 처리합니다. 필요한 코드를 여기에 추가하세요.
+                                Debug.WriteLine($"{count++}/{connectedComponents.Count} : ({connectedComponent.Average(entity => entity.X)}, {connectedComponent.Average(entity => entity.Y)}({connectedComponent.Count})");
+                                
+                                //_tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
+                            }
+
+                        });
+                        //Task.Run(() =>
+                        //{
+                        //    var connectedComponents = _connectedComponentFinder.GetConnectedComponents(points, 20);  // 임계값은 20
+                        //    int count = 0;
+                        //    foreach (var connectedComponent in connectedComponents)
+                        //    {
+                        //        // 각 연결된 구성 요소를 처리합니다. 필요한 코드를 여기에 추가하세요.
+                        //        Debug.WriteLine($"{count++}/{connectedComponents.Count} : {connectedComponent.Count()}");
+                        //    }
+                        //});
+                    }
+                    catch (Exception ex)
+                    {
+
+                        Debug.WriteLine($"Raised Exception in {nameof(CheckPointTask)} : {ex.Message}");
+                    }
+                });
+            }
+        }
+
+
 
         public List<Measure> RemoveNoise(List<Measure> points, int range, int minPoints)
         {
@@ -428,160 +483,17 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
             return result;
         }
+
+
         
 
-        //private Task CheckPointTask(Point point)
-        //{
-        //    return Task.Run(() =>
-        //    {
-        //        try
-        //        {
-        //            Application.Current?.Dispatcher?.Invoke(() =>
-        //            {
-        //                //var testPoint = new Point(point.X / DivideOffset, point.Y / DivideOffset);
-        //                if (PathGeometry != null && PathGeometry.FillContains(point))
-        //                {
-        //                    //Transfer Service
-        //                    var originPoint = BoundaryPoints.FirstOrDefault();
-        //                    Point newPoint;
-        //                    //if (SensorLocation == true)
-        //                    //{
-        //                    //    newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
-        //                    //}
-        //                    //else
-        //                    //{
-        //                    //    newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((originPoint.Y - point.Y) / DivideOffset));
-        //                    //}
-        //                    newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
-        //                    var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2), 
-        //                        Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
-        //                    //var model = @"{
-        //                    //            'width' : ,
-        //                    //            'height' : ,
-        //                    //            'x' : ,
-        //                    //            'y' : ,
-        //                    //            }";
-        //                    _tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
-                           
-        //                }
-        //            });
-        //        }
-        //        catch (Exception ex)
-        //        {
-
-        //            Debug.WriteLine($"Raised Exception in {nameof(CheckPointTask)} : {ex.Message}");
-        //        }
-        //    });
-        //}
-
-        private Task CheckPointTask(Point point)
-        {
-            return Task.Run(() =>
-            {
-                try
-                {
-                    Application.Current?.Dispatcher?.Invoke(() =>
-                    {
-                        //var testPoint = new Point(point.X / DivideOffset, point.Y / DivideOffset);
-                        if (PathGeometry != null && PathGeometry.FillContains(point))
-                        {
-                            // Transfer Service
-                            var originPoint = BoundaryPoints.FirstOrDefault();  // 첫 번째 경계 점
-                            Point newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
-
-                            points.Add(newPoint);  // 점을 목록에 추가
-
-                            // 연결된 구성 요소를 찾음
-                            var connectedComponentFinder = new ConnectedComponentFinder();
-                            var connectedComponents = connectedComponentFinder.GetConnectedComponents(points, 20);  // 임계값은 20
-
-                            //var model = new LidarDataModel(Math.Round(RelativeWidth, 2), Math.Round(RelativeHeight, 2),
-                            //    Math.Round(newPoint.X, 2), Math.Round(newPoint.Y, 2));
-                            
-                            //_tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
-
-                        }
-                    });
-                }
-                catch (Exception ex)
-                {
-
-                    Debug.WriteLine($"Raised Exception in {nameof(CheckPointTask)} : {ex.Message}");
-                }
-            });
-        }
+       
 
         List<Point> points = new List<Point>();  // 점들의 목록
 
-        public Point RotatePoint(Point point, double theta)
-        {
-            double radian = theta * Math.PI / 180; // Convert degree to radian
-            double cosTheta = Math.Cos(radian);
-            double sinTheta = Math.Sin(radian);
-            double x = point.X * cosTheta - point.Y * sinTheta;
-            double y = point.X * sinTheta + point.Y * cosTheta;
-            return new Point(x, y);
-        }
+        
 
-        public Point RotatePointAroundPivot(Point point, Point pivot, double theta)
-        {
-            // Translate point back to origin
-            point.X -= pivot.X;
-            point.Y -= pivot.Y;
-
-            // Rotate point
-            double radian = theta * Math.PI / 180; // Convert degree to radian
-            double cosTheta = Math.Cos(radian);
-            double sinTheta = Math.Sin(radian);
-            double xNew = point.X * cosTheta - point.Y * sinTheta;
-            double yNew = point.X * sinTheta + point.Y * cosTheta;
-
-            // Translate point back
-            Point newPoint = new Point(xNew + pivot.X, yNew + pivot.Y);
-            return newPoint;
-        }
-
-        public (double Width, double Height) CalculateWidthAndHeight(List<Point> points)
-        {
-            try
-            {
-                if (points != null && points.Count < 4)
-                {
-                    throw new ArgumentException("Exactly 4 points are required", nameof(points));
-                }
-
-
-                double minX = points.Min(point => point.X / DivideOffset);
-                double maxX = points.Max(point => point.X / DivideOffset);
-
-                double minY = points.Min(point => point.Y / DivideOffset);
-                double maxY = points.Max(point => point.Y / DivideOffset);
-
-                double width = maxX - minX;
-                double height = maxY - minY;
-
-                return (width, height);
-            }
-            catch (ArgumentException ex)
-            {
-                Debug.WriteLine($"Raised Exception in {nameof(CreatePathGeometry)} :" + ex.Message);
-                return (0.0, 0.0);
-            }
-
-        }
-
-        public Point MapToResolution(double canvasWidth, double canvasHeight, double pointX, double pointY)
-        {
-            // Calculate the ratio of the old size to the new size
-            double widthRatio = 1920 / canvasWidth;
-            double heightRatio = 1080 / canvasHeight;
-
-            // Multiply the original coordinates by the ratio to get the new coordinates
-            double newX = pointX * widthRatio;
-            double newY = pointY * heightRatio;
-
-            return new Point(newX, newY);
-        }
+       
 
         public void CreatePathGeometry(List<Point> points)
         {
@@ -593,7 +505,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                     throw new ArgumentException("Exactly 4 points are required", nameof(points));
                 }
 
-                
+
                 PathFigure pathFigure = new PathFigure();
                 pathFigure.StartPoint = points[0];
                 pathFigure.Segments.Add(new LineSegment(points[1], true));
@@ -606,7 +518,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             {
                 Debug.WriteLine($"Raised Exception in {nameof(CreatePathGeometry)} :" + ex.Message);
             }
-            
+
         }
 
         #endregion
@@ -691,17 +603,17 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double LidarMaxLength
         {
             get { return _lidarMaxLength / Scale; }
-            set 
-            { 
+            set
+            {
                 _lidarMaxLength = value;
                 NotifyOfPropertyChange(() => LidarMaxLength);
             }
         }
-       
+
         public double OffsetAngle
         {
             get { return _setupModel.OffsetAngle; }
-            set 
+            set
             {
                 _setupModel.OffsetAngle = value;
                 NotifyOfPropertyChange(() => OffsetAngle);
@@ -727,13 +639,13 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double ContentOffsetX
         {
             get { return ZoomAndPanControl.ContentOffsetX; }
-            
+
         }
 
         public double ContentOffsetY
         {
             get { return ZoomAndPanControl.ContentOffsetY; }
-            
+
         }
 
 
@@ -755,8 +667,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double CurrentX
         {
             get { return _currentX; }
-            set 
-            { 
+            set
+            {
                 _currentX = value;
                 NotifyOfPropertyChange(() => CurrentX);
             }
@@ -767,9 +679,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double CurrentY
         {
             get { return _currentY; }
-            set 
-            { 
-                _currentY = value; 
+            set
+            {
+                _currentY = value;
                 NotifyOfPropertyChange(() => CurrentY);
             }
         }
@@ -779,7 +691,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double RelativeX
         {
             get { return _relativeX; }
-            set 
+            set
             {
                 _relativeX = value;
                 NotifyOfPropertyChange(() => RelativeX);
@@ -791,7 +703,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double RelativeY
         {
             get { return _relativeY; }
-            set 
+            set
             {
                 _relativeY = value;
                 NotifyOfPropertyChange(() => RelativeY);
@@ -802,8 +714,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public PointCollection BoundaryPoints
         {
             get { return _setupModel.BoundaryPoints; }
-            set 
-            { 
+            set
+            {
                 _setupModel.BoundaryPoints = value;
                 NotifyOfPropertyChange(() => BoundaryPoints);
             }
@@ -816,9 +728,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public bool IsCompleted
         {
             get { return _isCompleted; }
-            set 
-            { 
-                _isCompleted = value; 
+            set
+            {
+                _isCompleted = value;
                 NotifyOfPropertyChange(() => IsCompleted);
             }
         }
@@ -829,9 +741,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double RelativeWidth
         {
             get { return _relativeWidth; }
-            set 
-            { 
-                _relativeWidth = value; 
+            set
+            {
+                _relativeWidth = value;
                 NotifyOfPropertyChange(() => RelativeWidth);
             }
         }
@@ -841,7 +753,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public double RelativeHeight
         {
             get { return _relativeHeight; }
-            set 
+            set
             {
                 _relativeHeight = value;
                 NotifyOfPropertyChange(() => RelativeHeight);
@@ -851,7 +763,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         public bool SensorLocation
         {
             get { return _setupModel.SensorLocation; }
-            set 
+            set
             {
                 _setupModel.SensorLocation = value;
                 NotifyOfPropertyChange(() => SensorLocation);
@@ -873,11 +785,15 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
         public PathGeometry PathGeometry { get; private set; }
         public int ValidCount { get; private set; }
+
+        public Thread ReceiveThread { get; private set; }
+        public Thread ProcessingThread { get; private set; }
         #endregion
         #region - Attributes -
         private LidarService _lidarService;
         private TcpServerService _tcpServerService;
         private SetupModel _setupModel;
+        private ConnectedComponentFinder _connectedComponentFinder;
         private StreamGeometry geometry;
         private object locker;
 

@@ -14,6 +14,8 @@ using System.Text.RegularExpressions;
 using Wpf.Rplidar.Solution.Utils;
 using Wpf.Rplidar.Solution.Models;
 using System.Windows.Media;
+using System.Windows;
+using Wpf.Rplidar.Solution.Helpers;
 
 namespace Wpf.Rplidar.Solution.Services
 {
@@ -30,9 +32,9 @@ namespace Wpf.Rplidar.Solution.Services
     {
 
         #region - Ctors -
-        public LidarService()
+        public LidarService(SetupModel setupModel)
         {
-
+            _setupModel = setupModel;
         }
         #endregion
         #region - Implementation of Interface -
@@ -104,14 +106,14 @@ namespace Wpf.Rplidar.Solution.Services
                         lock (rplidar.Measure_List)
                         {
                             List<Measure> measureList = new List<Measure>();
-                            foreach (Measure m in rplidar.Measure_List) //Copy Measure List
+                            foreach (Measure m in rplidar.Measure_List) //Copy Measure Measures
                             {
                                 if (!(m.distance > 150)) continue;
                                 measureList.Add(m);
                             }
                             lidarDataQueue.Enqueue(measureList); // 큐에 Lidar 데이터 추가
 
-                            rplidar.Measure_List.Clear(); //Clear original List
+                            rplidar.Measure_List.Clear(); //Clear original Measures
                         }
                         Thread.Sleep(150);
                     }
@@ -126,17 +128,44 @@ namespace Wpf.Rplidar.Solution.Services
                     {
                         if (lidarDataQueue.TryDequeue(out var measures))
                         {
+
                             // Lidar 데이터 처리
-                            // ...
-                            //SendPoints?.Invoke(measures);
-                            TransferPoints?.Invoke(this, new PointListArgs(measures));
-                            //TransferGroup?
-                            //.Invoke(this, new GroupListArgs( FindConnectedComponentsAndCenters(measures, 20)));
+                            List<Point> pointList = new List<Point>();
+                            foreach (Measure measure in measures)
+                            {
+                                //중점을 기준으로 (x,y) 수평이동
+                                var x = (measure.X / 10) + (Width / 2);
+                                var y = Height / 2 - (measure.Y / 10);
+
+                                var point = MathHelper.RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
+                                pointList.Add(point);
+                            }
+
+                            pointDataQueue.Enqueue(pointList); // 큐에 Lidar 데이터 추가
                         }
                     }
                     Debug.WriteLine($"{nameof(ProcessingThread)} was finished");
                 });
                 ProcessingThread.Start();
+
+                TransferThread = new Thread(() =>
+                {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        if (pointDataQueue.TryDequeue(out var points))
+                        {
+                            // Lidar 데이터 처리
+                            // ...
+                            //SendPoints?.Invoke(measures);
+
+                            TransferPoints?.Invoke(this, new PointListArgs(points));
+
+
+                        }
+                    }
+                    Debug.WriteLine($"{nameof(TransferThread)} was finished");
+                });
+                TransferThread.Start();
             }
             catch (TaskCanceledException ex)
             {
@@ -187,7 +216,12 @@ namespace Wpf.Rplidar.Solution.Services
         #region - Properties -
         public Thread CaptureThread { get; private set; }
         public Thread ProcessingThread { get; private set; }
+        public Thread TransferThread { get; private set; }
         private ConcurrentQueue<List<Measure>> lidarDataQueue = new ConcurrentQueue<List<Measure>>();
+        private ConcurrentQueue<List<Point>> pointDataQueue = new ConcurrentQueue<List<Point>>();
+        public double Width => _setupModel.Width;
+        public double Height => _setupModel.Height;
+        public double OffsetAngle => _setupModel.OffsetAngle;
         #endregion
         #region - Attributes -
         private RPLidarA1class rplidar;
@@ -200,6 +234,7 @@ namespace Wpf.Rplidar.Solution.Services
         public event EventHandler TransferGroup;
 
         public CancellationTokenSource cts;
+        private SetupModel _setupModel;
         #endregion
     }
 

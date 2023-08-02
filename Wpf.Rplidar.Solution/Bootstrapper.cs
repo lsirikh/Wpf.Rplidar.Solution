@@ -13,6 +13,7 @@ using Wpf.Libaries.ServerService.Services;
 using Wpf.Rplidar.Solution.Base;
 using Wpf.Rplidar.Solution.Models;
 using Wpf.Rplidar.Solution.Services;
+using Wpf.Rplidar.Solution.Utils;
 using Wpf.Rplidar.Solution.ViewModels;
 
 namespace Wpf.Rplidar.Solution
@@ -54,6 +55,7 @@ namespace Wpf.Rplidar.Solution
                 builder.RegisterType<VisualViewModel>().SingleInstance();
                 builder.RegisterType<LidarService>().SingleInstance();
                 builder.RegisterType<FileService>().SingleInstance();
+                builder.RegisterType<ConnectedComponentFinder>().SingleInstance();
 
                 var setupModel = new SetupModel();
                 builder.RegisterInstance(setupModel).SingleInstance();

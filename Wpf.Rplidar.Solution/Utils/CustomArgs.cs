@@ -1,6 +1,7 @@
 ﻿using RPLidarA1;
 using System;
 using System.Collections.Generic;
+using System.Windows;
 using Wpf.Rplidar.Solution.Models;
 
 namespace Wpf.Rplidar.Solution.Utils
@@ -20,7 +21,12 @@ namespace Wpf.Rplidar.Solution.Utils
         #region - Ctors -
         public PointListArgs(List<Measure> list)
         {
-            List = list;
+            Measures = list;
+        }
+
+        public PointListArgs(List<Point> list)
+        {
+            Points = list;
         }
         #endregion
         #region - Implementation of Interface -
@@ -34,7 +40,8 @@ namespace Wpf.Rplidar.Solution.Utils
         #region - IHanldes -
         #endregion
         #region - Properties -
-        public List<Measure> List { get; set; }
+        public List<Measure> Measures { get; set; }
+        public List<Point> Points { get; set; }
         #endregion
         #region - Attributes -
         #endregion

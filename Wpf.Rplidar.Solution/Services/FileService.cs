@@ -113,6 +113,7 @@ namespace Wpf.Rplidar.Solution.Services
             _data["LidarSetting"].AddKey("XOffset", "0");
             _data["LidarSetting"].AddKey("YOffset", "0");
             _data["LidarSetting"].AddKey("DivideOffset", "4.0");
+            _data["LidarSetting"].AddKey("SensorLocation", "True");
 
             _data["LidarSetting"].AddKey("Boundary", "");
 
@@ -137,6 +138,7 @@ namespace Wpf.Rplidar.Solution.Services
             model.XOffset = double.Parse(_data["LidarSetting"]["XOffset"].ToString());
             model.YOffset = double.Parse(_data["LidarSetting"]["YOffset"].ToString());
             model.DivideOffset = double.Parse(_data["LidarSetting"]["DivideOffset"].ToString());
+            model.SensorLocation = bool.Parse(_data["LidarSetting"]["SensorLocation"].ToString());
 
             try
             {
@@ -168,11 +170,15 @@ namespace Wpf.Rplidar.Solution.Services
             _data["LidarSetting"]["XOffset"] = model.XOffset.ToString();
             _data["LidarSetting"]["YOffset"] = model.YOffset.ToString();
             _data["LidarSetting"]["DivideOffset"] = model.DivideOffset.ToString();
+            _data["LidarSetting"]["SensorLocation"] = model.SensorLocation.ToString();
 
-            var tempPoint = new PointCollection(model.BoundaryPoints);
-            tempPoint.Remove(tempPoint.LastOrDefault());
-            string pointsString = string.Join(" ", tempPoint.Select(p => $"{p.X},{p.Y}"));
-
+            var tempPoint = model.BoundaryPoints.ToList();
+            string pointsString = "";
+            if (tempPoint.Count == 5)
+            {
+                tempPoint.RemoveAt(4);
+                pointsString = string.Join(" ", tempPoint?.Select(p => $"{p.X},{p.Y}"));
+            }
             _data["LidarSetting"]["Boundary"] = pointsString;
 
             _parser.WriteFile(CreateFilePath(), _data);

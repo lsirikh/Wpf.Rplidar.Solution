@@ -1,20 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Media;
 
-namespace Wpf.Rplidar.Solution.Models
+namespace Wpf.Rplidar.Solution.Utils
 {
     /****************************************************************************
-        Purpose      :                                                           
+        Purpose      : To compare the points allocated               
         Created By   : GHLee                                                
-        Created On   : 7/4/2023 9:42:50 AM                                                    
+        Created On   : 7/31/2023 4:34:15 PM                                                    
         Department   : SW Team                                                   
         Company      : Sensorway Co., Ltd.                                       
         Email        : lsirikh@naver.com                                         
      ****************************************************************************/
 
-    public class SetupModel
+    public class PointComparer : IEqualityComparer<Point>
     {
 
         #region - Ctors -
@@ -26,22 +24,22 @@ namespace Wpf.Rplidar.Solution.Models
         #region - Binding Methods -
         #endregion
         #region - Processes -
+        public bool Equals(Point x, Point y)
+        {
+            return x.X == y.X && x.Y == y.Y;
+        }
+
+        public int GetHashCode(Point obj)
+        {
+            int hash = 17;
+            hash = hash * 31 + obj.X.GetHashCode();
+            hash = hash * 31 + obj.Y.GetHashCode();
+            return hash;
+        }
         #endregion
         #region - IHanldes -
         #endregion
         #region - Properties -
-        public string IpAddress { get; set; }
-        public int Port { get; set; }
-
-        public double Width { get; set; }
-        public double Height { get; set; }
-        //public Measures<Point> BoundaryPoints { get; set; } = new Measures<Point>();
-        public PointCollection BoundaryPoints { get; set; } = new PointCollection();
-        public double OffsetAngle { get; set; }
-        public double XOffset { get; set; }
-        public double YOffset { get; set; }
-        public double DivideOffset { get; set; }
-        public bool SensorLocation { get; set; }
         #endregion
         #region - Attributes -
         #endregion

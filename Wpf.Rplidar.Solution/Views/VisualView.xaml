@@ -78,10 +78,10 @@
 								   x:Name="ZoomAndPanControl"   Background="#44000000">
 					<Border BorderThickness="2" BorderBrush="Black" Background="White">
 
-						<innerCon:DrawingCanvas Width="{Binding Width}" Height="{Binding Height}" x:Name="canvas" Points="{Binding Points}" Visibility="Visible"
-											SnapsToDevicePixels="True"
-											cal:Message.Attach="[Event MouseMove] = [Action canvas_MouseMove($source, $eventArgs)];
-																[Event MouseLeave] = [Action canvas_MouseLeave($source, $eventArgs)];"
+						<innerCon:DrawingCanvas Width="{Binding Width}" Height="{Binding Height}" x:Name="canvas" Points="{Binding Points}" 
+												SnapsToDevicePixels="True"
+												cal:Message.Attach="[Event MouseMove] = [Action canvas_MouseMove($source, $eventArgs)];
+																	[Event MouseLeave] = [Action canvas_MouseLeave($source, $eventArgs)];"
 											>
 
 
@@ -157,14 +157,26 @@
 					<ColumnDefinition Width="*"/>
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
+				<Button Grid.Column="0"
+						x:Name="ClickToSetHighPosition"
+						IsEnabled="{Binding SensorLocation, Converter={StaticResource InvertBooleanConverter}}"
+						Style="{StaticResource ButtonStyle}"
+						Background="Bisque"
+						Content="Top Location"/>
+				<Button Grid.Column="1"
+						x:Name="ClickToSetLowPosition"
+						Background="Bisque"
+						IsEnabled="{Binding SensorLocation}"
+						Style="{StaticResource ButtonStyle}"
+						Content="Bottom Location"/>
 				<Button Grid.Column="2"
-					x:Name="ClickToSetBoundary"
-					Style="{StaticResource ButtonStyle}"
-					Content="Set Boundary"/>
+						x:Name="ClickToSetBoundary"
+						Style="{StaticResource ButtonStyle}"
+						Content="Set Boundary"/>
 				<Button Grid.Column="3"
-					x:Name="ClickToClearBoundary"
-					Style="{StaticResource ButtonStyle}"
-					Content="Clear Boundary"/>
+						x:Name="ClickToClearBoundary"
+						Style="{StaticResource ButtonStyle}"
+						Content="Clear Boundary"/>
 			</Grid>
 		</Grid>
 		<GridSplitter Grid.Column="1"
@@ -255,6 +267,7 @@
 					   Text="°"
 					   Style="{StaticResource TextBlockStyle}"/>
 				</Grid>
+				
 				<Grid>
 
 					<Grid.ColumnDefinitions>

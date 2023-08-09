@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -45,7 +46,7 @@ namespace Wpf.Rplidar.Solution.Controls
     ///     <MyNamespace:DrawingCanvas/>
     ///
     /// </summary>
-    public partial class DrawingCanvas : Canvas
+    public partial class DrawingCanvas : Canvas, IDisposable
     {
         private static readonly Pen _pen;
         private static object locker;
@@ -62,6 +63,8 @@ namespace Wpf.Rplidar.Solution.Controls
             DependencyProperty.Register("Points", typeof(List<Point>), typeof(DrawingCanvas), new PropertyMetadata(new List<Point>()));
 
 
+
+
         static DrawingCanvas()
         {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(DrawingCanvas), new FrameworkPropertyMetadata(typeof(DrawingCanvas)));
@@ -74,45 +77,40 @@ namespace Wpf.Rplidar.Solution.Controls
 
         public DrawingCanvas()
         {
-            var timer = new System.Timers.Timer(300);
-            try
+            Task.Run(() =>
             {
-                timer.Elapsed += (sender, e) =>
+
+                try
                 {
-                    if (_cancellationTokenSource.IsCancellationRequested) throw new TaskCanceledException();
-
-                    Dispatcher.Invoke(() =>
+                    while (true)
                     {
-                        InvalidateVisual();
-                    });
-                };
-                timer.Start();
-            }
-            catch 
-            {
-                timer.Stop();
-                timer.Dispose();
-            }
+                        if (_cancellationTokenSource.IsCancellationRequested) 
+                            throw new TaskCanceledException();
 
-        }
-
-        ~DrawingCanvas()
-        {
-            _cancellationTokenSource.Cancel();
+                        Dispatcher.Invoke(() =>
+                        {
+                            InvalidateVisual();
+                        });
+                        
+                        Thread.Sleep(150);
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    Debug.WriteLine($"Raised TaskCanceledException in {nameof(DrawingCanvas)} ");
+                }
+            }, _cancellationTokenSource.Token);
         }
 
         protected override void OnRender(DrawingContext dc)
         {
             try
             {
-                lock (locker)
+                foreach (var item in Points)
                 {
-                    foreach (var item in Points)
-                    {
-                        dc.DrawEllipse(Brushes.Gray, _pen, new Point(item.X, item.Y), 2, 2);
-                    }
-                    Points.Clear();
+                    dc.DrawEllipse(Brushes.Gray, _pen, new Point(item.X, item.Y), 2, 2);
                 }
+                Points.Clear();
             }
             catch
             {
@@ -122,6 +120,12 @@ namespace Wpf.Rplidar.Solution.Controls
                 GC.Collect();
             }
 
+        }
+
+        public void Dispose()
+        {
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Dispose();
         }
     }
 }

@@ -151,7 +151,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             if(SelectedPort != null) 
             {
                 
-                _lidarService.InitSerial(SelectedPort);
+               _lidarService.InitSerial(SelectedPort);
             }
         }
 

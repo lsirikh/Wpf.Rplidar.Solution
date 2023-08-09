@@ -174,7 +174,9 @@
     <Compile Include="Base\ParentBootstrapper.cs" />
     <Compile Include="Controls\CanvasCustomControl.cs" />
     <Compile Include="Controls\DrawingCanvas.cs" />
+    <Compile Include="Helpers\MathHelper.cs" />
     <Compile Include="Models\DemoModel.cs" />
+    <Compile Include="Models\GroupModel.cs" />
     <Compile Include="Models\ILogModel.cs" />
     <Compile Include="Models\LidarDataModel.cs" />
     <Compile Include="Models\LogModel.cs" />
@@ -182,11 +184,14 @@
     <Compile Include="Models\SetupModel.cs" />
     <Compile Include="Services\FileService.cs" />
     <Compile Include="Services\LidarService.cs" />
+    <Compile Include="Utils\ConnectedComponentFinder.cs" />
     <Compile Include="Utils\EnumLogType.cs" />
     <Compile Include="Utils\HalfValueConverter.cs" />
     <Compile Include="Utils\MouseHandingMode.cs" />
     <Compile Include="Utils\NullToVisibilityConverter.cs" />
     <Compile Include="Utils\OffsetConverter.cs" />
+    <Compile Include="Utils\CustomArgs.cs" />
+    <Compile Include="Utils\PointComparer.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\Symbols\EllipseViewModel.cs" />
     <Compile Include="ViewModels\VisualViewModel.cs" />

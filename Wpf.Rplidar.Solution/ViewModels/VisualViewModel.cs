@@ -78,7 +78,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 (RelativeWidth, RelativeHeight) = MathHelper.CalculateWidthAndHeight(boundaryPoints.ToList<Point>(), DivideOffset);
                 CreatePathGeometry(boundaryPoints.ToList<Point>());
 
-                var point = pCollection.FirstOrDefault();
+                var point = new Point(pCollection.FirstOrDefault().X, pCollection.FirstOrDefault().Y);
+
                 pCollection.Add(point);
                 IsCompleted = true;
 
@@ -374,19 +375,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 ValidCount = 0;
                 if (Points.Count > 0) return;
 
-
-                //foreach (Measure measure in args.Measures)
-                //{
-                //    //중점을 기준으로 (x,y) 수평이동
-                //    var x = (measure.X / 10) + (Width / 2);
-                //    var y = Height / 2 - (measure.Y / 10);
-
-                //    var point = MathHelper.RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
-
-                //    Points.Add(point);
-                //    _ = CheckPointTask(point);
-                //}
-
                 foreach (var point in args.Points)
                 {
                     Points.Add(point);
@@ -394,8 +382,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 }
 
                 _ = CheckPointTask(args.Points);
-
-
             }
             catch (Exception)
             {
@@ -413,7 +399,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                     try
                     {
 
-                        Application.Current?.Dispatcher?.Invoke(() =>
+                        Application.Current?.Dispatcher?.Invoke(async () =>
                         {
 
 
@@ -425,37 +411,44 @@ namespace Wpf.Rplidar.Solution.ViewModels
                                 {
                                     // Transfer Service
                                     var originPoint = BoundaryPoints.FirstOrDefault();  // 첫 번째 경계 점
-                                    Point newPoint = new Point(((point.X - originPoint.X) / DivideOffset), ((point.Y - originPoint.Y) / DivideOffset));
+                                    var x = Math.Round(((point.X - originPoint.X) / DivideOffset), 1);
+                                    var y = Math.Round(((point.Y - originPoint.Y) / DivideOffset), 1);
+                                    //Debug.WriteLine($"(x, y)=>({x}, {y})");
+                                    Point newPoint = new Point(x, y);
 
                                     points.Add(newPoint);  // 점을 목록에 추가
-
-
                                 }
-
-
                             }
                             // 연결된 구성 요소를 찾음
-                            var connectedComponents = _connectedComponentFinder.GetConnectedComponents(points, 5);  // 임계값은 20
-                            int count = 1;
+                            // 임계값은 5
+                            var connectedComponents = _connectedComponentFinder.GetConnectedComponents(points, 5);  
+                            
+                            if (!(connectedComponents.Count > 0)) return;
+                            
+                            var currentGroup = 1;
+                            
+                            _frameSquence++;
+                            if (_frameSquence > 10000000)
+                                _frameSquence = 0;
+
+                            var modelList = new List<LidarDataModel>();
                             foreach (var connectedComponent in connectedComponents)
                             {
+                                if(!(connectedComponent.Count > 1)) continue;
+
                                 // 각 연결된 구성 요소를 처리합니다. 필요한 코드를 여기에 추가하세요.
-                                Debug.WriteLine($"{count++}/{connectedComponents.Count} : ({connectedComponent.Average(entity => entity.X)}, {connectedComponent.Average(entity => entity.Y)}({connectedComponent.Count})");
-                                
-                                //_tcpServerService.SendRequest(JsonConvert.SerializeObject(model));
+                                var avgX = Math.Round(connectedComponent.Average(entity => entity.X), 1);
+                                var avgY = Math.Round(connectedComponent.Average(entity => entity.Y), 1);
+                                //Debug.WriteLine($"{currentGroup++}/{connectedComponents.Count} : ({avgX}, {avgY})[{connectedComponent.Count}]");
+
+                                modelList.Add(new LidarDataModel(RelativeWidth, RelativeHeight, avgX, avgY, currentGroup++, connectedComponents.Count, _frameSquence));
                             }
 
+                            if (!(modelList.Count > 0)) return;
+
+                           await _tcpServerService.SendRequest(JsonConvert.SerializeObject(modelList));
+
                         });
-                        //Task.Run(() =>
-                        //{
-                        //    var connectedComponents = _connectedComponentFinder.GetConnectedComponents(points, 20);  // 임계값은 20
-                        //    int count = 0;
-                        //    foreach (var connectedComponent in connectedComponents)
-                        //    {
-                        //        // 각 연결된 구성 요소를 처리합니다. 필요한 코드를 여기에 추가하세요.
-                        //        Debug.WriteLine($"{count++}/{connectedComponents.Count} : {connectedComponent.Count()}");
-                        //    }
-                        //});
                     }
                     catch (Exception ex)
                     {
@@ -803,6 +796,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         private Point origZoomAndPanControlMouseDownPoint;
         private Point origContentMouseDownPoint;
         private bool _isBoundarySet;
+        private int _frameSquence;
         #endregion
     }
 }

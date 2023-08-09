@@ -172,10 +172,13 @@ namespace Wpf.Rplidar.Solution.Services
             _data["LidarSetting"]["DivideOffset"] = model.DivideOffset.ToString();
             _data["LidarSetting"]["SensorLocation"] = model.SensorLocation.ToString();
 
-            var tempPoint = new PointCollection(model.BoundaryPoints);
-            tempPoint.Remove(tempPoint.LastOrDefault());
-            string pointsString = string.Join(" ", tempPoint.Select(p => $"{p.X},{p.Y}"));
-
+            var tempPoint = model.BoundaryPoints.ToList();
+            string pointsString = "";
+            if (tempPoint.Count == 5)
+            {
+                tempPoint.RemoveAt(4);
+                pointsString = string.Join(" ", tempPoint?.Select(p => $"{p.X},{p.Y}"));
+            }
             _data["LidarSetting"]["Boundary"] = pointsString;
 
             _parser.WriteFile(CreateFilePath(), _data);

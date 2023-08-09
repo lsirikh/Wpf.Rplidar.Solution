@@ -43,6 +43,10 @@ namespace Wpf.Rplidar.Solution.Helpers
             // Translate point back to origin
             point.X -= pivot.X;
             point.Y -= pivot.Y;
+            //if (isHigh)
+            //    point.Y -= pivot.Y;
+            //else
+            //    point.Y += pivot.Y;
 
             // Rotate point
             double radian = theta * Math.PI / 180; // Convert degree to radian

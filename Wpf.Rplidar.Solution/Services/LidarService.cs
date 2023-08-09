@@ -137,7 +137,8 @@ namespace Wpf.Rplidar.Solution.Services
                                 var x = (measure.X / 10) + (Width / 2);
                                 var y = Height / 2 - (measure.Y / 10);
 
-                                var point = MathHelper.RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
+                                var point = MathHelper
+                                .RotatePointAroundPivot(new Point(x, y), new Point(Width / 2, Height / 2), OffsetAngle);
                                 pointList.Add(point);
                             }
 
@@ -222,6 +223,7 @@ namespace Wpf.Rplidar.Solution.Services
         public double Width => _setupModel.Width;
         public double Height => _setupModel.Height;
         public double OffsetAngle => _setupModel.OffsetAngle;
+        public bool SensorLocation=> _setupModel.SensorLocation;
         #endregion
         #region - Attributes -
         private RPLidarA1class rplidar;

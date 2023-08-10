@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>BarbaSoft</Authors>
+    <Company>BarbaSoft</Company>
+    <PackageId>BarbaSoft.RPLidarA1</PackageId>
+    <Description>RPLidar A1 protocol with 8000 sample/second.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>laser.png</PackageIcon>
+    <PackageIconUrl />
+    <PackageTags>Slamtec, RPLidar, A1, Protocol, Scan</PackageTags>
+    <PackageReleaseNotes>RPLidar A1 scan protocol with 8000 sample/sec. Use to read data from RPLidar A1 laser scanner.
+Fixed serial compatibility problem with Raspberry.
+Added ability to stop scanning and motor rotation.
+Fixed some bugs of the previous version.
+</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/BarbaSoft/RPLidarA1</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <Version>1.0.4</Version>
+    <PackageProjectUrl>https://github.com/BarbaSoft/RPLidarA1</PackageProjectUrl>
+    <NeutralLanguage>en-150</NeutralLanguage>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>

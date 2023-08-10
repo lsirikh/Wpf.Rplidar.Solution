@@ -1,41 +1,37 @@
-﻿using System.Collections.Generic;
-using System.Windows;
+﻿using Autofac;
+using log4net;
 
-namespace Wpf.Rplidar.Solution.Utils
+namespace Wpf.Rplidar.Solution.Modules
 {
     /****************************************************************************
-        Purpose      : To compare the _validPoints allocated               
+        Purpose      :                                                           
         Created By   : GHLee                                                
-        Created On   : 7/31/2023 4:34:15 PM                                                    
+        Created On   : 8/10/2023 9:28:56 AM                                                    
         Department   : SW Team                                                   
         Company      : Sensorway Co., Ltd.                                       
         Email        : lsirikh@naver.com                                         
      ****************************************************************************/
 
-    public class PointComparer : IEqualityComparer<Point>
+    public class Log4NetModule : Module
     {
 
         #region - Ctors -
+
         #endregion
         #region - Implementation of Interface -
         #endregion
         #region - Overrides -
+        protected override void Load(ContainerBuilder builder)
+        {
+            // log4net 등록
+            builder.Register(c => LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType))
+                   .As<ILog>()
+                   .SingleInstance(); // 싱글턴 스코프로 등록
+        }
         #endregion
         #region - Binding Methods -
         #endregion
         #region - Processes -
-        public bool Equals(Point x, Point y)
-        {
-            return x.X == y.X && x.Y == y.Y;
-        }
-
-        public int GetHashCode(Point obj)
-        {
-            int hash = 17;
-            hash = hash * 31 + obj.X.GetHashCode();
-            hash = hash * 31 + obj.Y.GetHashCode();
-            return hash;
-        }
         #endregion
         #region - IHanldes -
         #endregion

@@ -48,7 +48,7 @@ namespace Wpf.Libaries.ServerService.Base
 
 
                 //Mode Prepared
-                Mode = EnumTcpMode.DISCONNECTED;
+                Mode = EnumTcpMode.CLOSED;
 
                 CreateSocket(ipep);
                 
@@ -96,7 +96,6 @@ namespace Wpf.Libaries.ServerService.Base
         {
             try
             {
-                Mode = EnumTcpMode.DISCONNECTED;
                 foreach (var client in ClientList.ToList())
                 {
                     if (client.Socket != null && client.Socket.Connected)
@@ -119,13 +118,12 @@ namespace Wpf.Libaries.ServerService.Base
                 ///Timer Task Dispose
                 DisposeTimer();
 
-                Mode = EnumTcpMode.INACTIVE;
                 ///Socket Closed
                 Socket.Close();
                 Debug.WriteLine($"{nameof(TcpServer)} socket({Socket.GetHashCode()}) was closed in {nameof(CloseSocket)}");
 
                 //Mode Created
-                Mode = EnumTcpMode.NONE;
+                Mode = EnumTcpMode.CLOSED;
                 Debug.WriteLine($"{nameof(TcpServer)} socket({Socket.GetHashCode()}) was disposed in {nameof(CloseSocket)}");
             }
             catch (Exception ex)
@@ -164,7 +162,8 @@ namespace Wpf.Libaries.ServerService.Base
             {
                 TcpAcceptedClient client = (TcpAcceptedClient)sender;
                 Connected?.Invoke(this, new TcpEventArgs((IPEndPoint)client.Socket.RemoteEndPoint));
-
+                
+                Mode = EnumTcpMode.CONNECTED;
                 //For Test
                 //await client.SendRequest("Welcome!");
             }
@@ -229,7 +228,7 @@ namespace Wpf.Libaries.ServerService.Base
                 SetTimerStart();
 
                 //Mode Created
-                Mode = EnumTcpMode.INACTIVE;
+                Mode = EnumTcpMode.CREATED;
 
                 //서버 메시지 대기
                 Socket.AcceptAsync(_hearingEvent);

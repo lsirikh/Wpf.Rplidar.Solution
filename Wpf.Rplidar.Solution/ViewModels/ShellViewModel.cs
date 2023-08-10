@@ -32,6 +32,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                                 , VisualViewModel visualViewModel
                                 , LidarService lidarService
                                 , FileService fileService
+                                , LogService logService
                                 , SetupModel setupModel
                                 , TcpServerService tcpServerService
             )
@@ -41,6 +42,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             _fileService = fileService;
             _setupModel = setupModel;
             _tcpServerService = tcpServerService;
+            _logService = logService;
             VisualViewModel = visualViewModel;
         }
         #endregion
@@ -63,17 +65,11 @@ namespace Wpf.Rplidar.Solution.ViewModels
             _tcpServerService.Received += _tcpServerService_Received;
             _tcpServerService.Disconnected += _tcpServerService_Disconnected;
 
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(2000);
-                var serverModel = new TcpServerModel();
-
-                serverModel.IpAddress = _setupModel.IpAddress;
-                serverModel.Port = _setupModel.Port;
-                serverModel.HeartBeat = 1000;
-                _tcpServerService.InitSocket(serverModel);
-            });
-
+            _serverModel = new TcpServerModel();
+            _serverModel.IpAddress = _setupModel.IpAddress;
+            _serverModel.Port = _setupModel.Port;
+            _serverModel.HeartBeat = 1000;
+            
             return base.OnActivateAsync(cancellationToken);
         }
 
@@ -114,7 +110,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
             _fileService.Dispose();
             _eventAggregator.Unsubscribe(this);
             VisualViewModel.DeactivateAsync(true);
-
             
             Thread.Sleep(500);
             return base.OnDeactivateAsync(close, cancellationToken);
@@ -139,6 +134,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             {
                 // Your GUI update code here.
                 // For example, update a TextBlock's Text property:
+                _logService.Info(msg);
                 int id = LogProvider?.Count() == null ? 0 : LogProvider.Count() + 1;
                 LogProvider.Add(new LogViewModel(new LogModel(id, DateTime.Now, EnumLogType.INFO, msg)));
                 Status = status;
@@ -150,16 +146,23 @@ namespace Wpf.Rplidar.Solution.ViewModels
         {
             if(SelectedPort != null) 
             {
-                
-               _lidarService.InitSerial(SelectedPort);
+                if(_tcpServerService.Mode == EnumTcpMode.CLOSED)
+                    _tcpServerService.InitSocket(_serverModel);
+
+                _lidarService.InitSerial(SelectedPort);
+
+                IsStarted = true;
+
+                _logService.Info("라이다 및 서버 시작");
             }
         }
 
         public void ClickToDisconnect()
         {
-            //_lidarService.Message -= _lidarService_Message;
             _lidarService.UninitSerial();
             _tcpServerService.CloseSocket();
+            IsStarted = false;
+            _logService.Info("라이다 및 서버 종료");
         }
 
         public void ClickToLoad()
@@ -167,11 +170,13 @@ namespace Wpf.Rplidar.Solution.ViewModels
             _fileService.CreateSetupModel(_setupModel);
             Refresh();
             _eventAggregator.PublishOnUIThreadAsync(new SetupMessageRefresh());
+            _logService.Info("Properties.ini 불러오기");
         }
 
         public void ClickToSave()
         {
             _fileService.SaveSetupModel(_setupModel);
+            _logService.Info("Properties.ini 저장");
            
         }
         #endregion
@@ -224,15 +229,26 @@ namespace Wpf.Rplidar.Solution.ViewModels
             }
         }
 
-
+        public bool IsStarted
+        {
+            get { return _isStarted; }
+            set 
+            { 
+                _isStarted = value;
+                NotifyOfPropertyChange(() => IsStarted);
+            }
+        }
         #endregion
         #region - Attributes -
         private IEventAggregator _eventAggregator;
+        private bool _isStarted;
         private string _selectedPort;
         private LidarService _lidarService;
         private TcpServerService _tcpServerService;
+        private LogService _logService;
         private FileService _fileService;
         private SetupModel _setupModel;
+        private TcpServerModel _serverModel;
         #endregion
     }
 }

@@ -12,9 +12,8 @@
     public enum EnumTcpMode : int
     {
 
-       NONE = 0,
-       INACTIVE = 1,
-       DISCONNECTED = 2,
-       CONNECTED = 3,
+       CLOSED = 0,
+       CREATED = 1,
+       CONNECTED = 2,
     }
 }

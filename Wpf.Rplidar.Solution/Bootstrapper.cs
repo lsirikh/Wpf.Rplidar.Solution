@@ -12,6 +12,7 @@ using Wpf.Libaries.ServerService.Models;
 using Wpf.Libaries.ServerService.Services;
 using Wpf.Rplidar.Solution.Base;
 using Wpf.Rplidar.Solution.Models;
+using Wpf.Rplidar.Solution.Modules;
 using Wpf.Rplidar.Solution.Services;
 using Wpf.Rplidar.Solution.Utils;
 using Wpf.Rplidar.Solution.ViewModels;
@@ -36,7 +37,8 @@ namespace Wpf.Rplidar.Solution
             var setupModel = IoC.Get<SetupModel>();
             fileService.Init();
             fileService.CreateSetupModel(setupModel);
-            
+            var logService = IoC.Get<LogService>();
+            logService.Init();
 
             await DisplayRootViewForAsync<ShellViewModel>();
         }
@@ -61,6 +63,11 @@ namespace Wpf.Rplidar.Solution
                 builder.RegisterInstance(setupModel).SingleInstance();
 
                 builder.RegisterType<TcpServerService>().SingleInstance();
+
+                // log4net 모듈 로드
+                builder.RegisterModule(new Log4NetModule());
+
+                builder.RegisterType<LogService>().SingleInstance();
 
             }
             catch (Exception)

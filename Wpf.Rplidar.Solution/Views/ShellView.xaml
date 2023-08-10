@@ -6,8 +6,12 @@
         xmlns:local="clr-namespace:Wpf.Rplidar.Solution.Views"
 		xmlns:cal="http://caliburnmicro.com"
 		xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+		xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+        fw:AcrylicWindow.Enabled="True"
+        fw:AcrylicWindow.TintColor="#DD000000"
+        fw:AcrylicWindow.FallbackColor="#66DDDDDD"
         mc:Ignorable="d"
-		Background="#99CCFF"
+		Foreground="WhiteSmoke"
         Title="RpLidar Setup" Height="820" Width="1000">
 	<Window.Resources>
 		<Style TargetType="TextBlock" x:Key="TextBlockStyle" BasedOn="{StaticResource MaterialDesignTextBlock}">
@@ -75,11 +79,13 @@
 			<Button Grid.Column="4"
 					x:Name="ClickToConnect"
 					Style="{StaticResource ButtonStyle}"
-					Content="Connect"/>
+					IsEnabled="{Binding IsStarted, Converter={StaticResource InvertBooleanConverter}}"
+					Content="Start"/>
 			<Button Grid.Column="5"
 					x:Name="ClickToDisconnect"
 					Style="{StaticResource ButtonStyle}"
-					Content="Disconnect"/>
+					IsEnabled="{Binding IsStarted}"
+					Content="Stop"/>
 		</Grid>
 
 		<Grid Grid.Row="1">

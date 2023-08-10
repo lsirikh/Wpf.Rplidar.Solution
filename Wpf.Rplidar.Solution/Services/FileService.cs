@@ -28,8 +28,9 @@ namespace Wpf.Rplidar.Solution.Services
     {
 
         #region - Ctors -
-        public FileService()
+        public FileService(LogService logService)
         {
+            _logService = logService;
             _locker = new ReaderWriterLock();
         }
         #endregion
@@ -46,8 +47,10 @@ namespace Wpf.Rplidar.Solution.Services
 
             _folderPath = appDirectory + @"\Properties";
 
+            _logService.Info($"{nameof(FileService)} was initiated");
             CheckDir();
             CreateFile(CreateFilePath());
+
             
         }
 
@@ -73,9 +76,7 @@ namespace Wpf.Rplidar.Solution.Services
 
         private string CreateFilePath()
         {
-            var fileName = $"properties.ini";
-            
-            return _folderPath + @"\" + fileName;
+            return _folderPath + @"\" + FILENAME;
         }
 
         private void CreateFile(string filePath)
@@ -118,6 +119,8 @@ namespace Wpf.Rplidar.Solution.Services
             _data["LidarSetting"].AddKey("Boundary", "");
 
             _parser.WriteFile(filePath, _data);
+
+            _logService.Info($"{FILENAME} 파일 생성");
         }
 
 
@@ -155,7 +158,9 @@ namespace Wpf.Rplidar.Solution.Services
             catch
             {
             }
-            
+
+            _logService.Info($"{nameof(SetupModel)}의 인스턴스 생성");
+
         }
 
         public void SaveSetupModel(SetupModel model)
@@ -182,14 +187,19 @@ namespace Wpf.Rplidar.Solution.Services
             _data["LidarSetting"]["Boundary"] = pointsString;
 
             _parser.WriteFile(CreateFilePath(), _data);
+
+            _logService.Info($"{FILENAME} 저장");
         }
 
         public void Dispose()
         {
             _parser = null;
             _data = null;
+            _logService.Info($"{nameof(FileService)} was Disposed");
             GC.Collect();
         }
+
+        private LogService _logService;
 
         #endregion
         #region - IHanldes -
@@ -201,6 +211,7 @@ namespace Wpf.Rplidar.Solution.Services
         private string _folderPath;
         private FileIniDataParser _parser;
         private IniData _data;
+        public const string FILENAME = "properties.ini";
         #endregion
     }
 }

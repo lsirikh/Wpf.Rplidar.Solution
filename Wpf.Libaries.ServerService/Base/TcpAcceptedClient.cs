@@ -50,13 +50,13 @@ namespace Wpf.Libaries.ServerService.Base
                 //전달받은 소켓 전역으로 활용
                 Socket = socketClient;
 
-                Mode = Utils.EnumTcpMode.INACTIVE;
                 //HeartBeatExpireTime = DateTime.Now + TimeSpan.FromSeconds(20);
                 SetTimerInterval(1000);
                 SetTimerStart();
 
                 Socket.LingerState = new LingerOption(true, 1);
                 Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                Mode = EnumTcpMode.CREATED;
 
                 // 서버에 보낼 객체를 만든다.
                 var _receiveEvent = new SocketAsyncEventArgs();
@@ -69,14 +69,13 @@ namespace Wpf.Libaries.ServerService.Base
                 //데이터 길이 세팅
                 _receiveEvent.SetBuffer(new byte[PACKET_BYTE], 0, PACKET_BYTE);
 
-                Mode = Utils.EnumTcpMode.DISCONNECTED;
                 //받음 완료 이벤트 연결
                 _receiveEvent.Completed += new EventHandler<SocketAsyncEventArgs>(Recieve_Completed);
 
                 //클라이언트 연결 후, 호출한 서버클래스 내부 작업 요청
                 Connected?.Invoke(this, new TcpEventArgs(socketClient.RemoteEndPoint as IPEndPoint));
 
-                Mode = Utils.EnumTcpMode.CONNECTED;
+                Mode = EnumTcpMode.CONNECTED;
 
                 //받음 보냄
                 Socket.ReceiveAsync(_receiveEvent);
@@ -234,14 +233,13 @@ namespace Wpf.Libaries.ServerService.Base
 
         private void Disconnect_Process()
         {
-            Mode = EnumTcpMode.DISCONNECTED;
+            Mode = EnumTcpMode.CREATED;
             Debug.WriteLine($"{nameof(TcpAcceptedClient)} socket({Socket.GetHashCode()}) was disconnected in {nameof(Disconnect_Complete)}");
             //Socket Close to finish using socket
-            Mode = EnumTcpMode.INACTIVE;
             Socket?.Close();
             Debug.WriteLine($"{nameof(TcpAcceptedClient)} socket({Socket.GetHashCode()}) was closed in {nameof(Disconnect_Complete)}");
             //Socket Dispose to release resources
-            Mode = EnumTcpMode.NONE;
+            Mode = EnumTcpMode.CLOSED;
             Socket?.Dispose();
             Debug.WriteLine($"{nameof(TcpAcceptedClient)} socket({Socket.GetHashCode()}) was disposed in {nameof(Disconnect_Complete)}");
         }

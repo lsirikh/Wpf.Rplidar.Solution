@@ -42,12 +42,14 @@ namespace Wpf.Rplidar.Solution.ViewModels
                                 , LidarService lidarService
                                 , TcpServerService tcpServerService
                                 , ConnectedComponentFinder connectedComponentFinder
+                                , LogService logService
                                 , SetupModel setupModel)
                                  : base(eventAggregator)
         {
             _lidarService = lidarService;
             _tcpServerService = tcpServerService;
             _setupModel = setupModel;
+            _logService = logService;
             _connectedComponentFinder = connectedComponentFinder;
             locker = new object();
         }
@@ -61,7 +63,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
 
             _lidarService.TransferPoints += _lidarService_TransferPoints;
-            //_lidarService.TransferGroup += _lidarService_TransferGroup;
             Points = new List<Point>();
 
             BoundaryPoints = CreateBoundary(_setupModel.BoundaryPoints);
@@ -82,6 +83,8 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
                 pCollection.Add(point);
                 IsCompleted = true;
+
+                _logService.Info("CreateBoundary");
 
                 return pCollection;
             }
@@ -167,8 +170,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 }
                 else if (mouseHandlingMode == MouseHandlingMode.AddBoundary)
                 {
-
-
                     if (IsCompleted)
                     {
                         ClickToClearBoundary();
@@ -185,7 +186,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
                     {
                         BoundaryPoints = CreateBoundary(BoundaryPoints);
                         Ellipses.Clear();
-
                     }
                     else
                     {
@@ -398,13 +398,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 {
                     try
                     {
-
                         Application.Current?.Dispatcher?.Invoke(async () =>
                         {
-
-
-                            //var testPoint = new Point(point.X / DivideOffset, point.Y / DivideOffset);
-                            points.Clear();
+                            _validPoints.Clear();
                             foreach (var point in pList)
                             {
                                 if (PathGeometry != null && PathGeometry.FillContains(point))
@@ -416,19 +412,19 @@ namespace Wpf.Rplidar.Solution.ViewModels
                                     //Debug.WriteLine($"(x, y)=>({x}, {y})");
                                     Point newPoint = new Point(x, y);
 
-                                    points.Add(newPoint);  // 점을 목록에 추가
+                                    _validPoints.Add(newPoint);  // 점을 목록에 추가
                                 }
                             }
                             // 연결된 구성 요소를 찾음
                             // 임계값은 5
-                            var connectedComponents = _connectedComponentFinder.GetConnectedComponents(points, 5);  
+                            var connectedComponents = _connectedComponentFinder.GetConnectedComponents(_validPoints, 5);  
                             
                             if (!(connectedComponents.Count > 0)) return;
                             
                             var currentGroup = 1;
                             
                             _frameSquence++;
-                            if (_frameSquence > 10000000)
+                            if (_frameSquence > MAX_FRAME)
                                 _frameSquence = 0;
 
                             var modelList = new List<LidarDataModel>();
@@ -436,7 +432,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                             {
                                 if(!(connectedComponent.Count > 1)) continue;
 
-                                // 각 연결된 구성 요소를 처리합니다. 필요한 코드를 여기에 추가하세요.
+                                // Connected Components의 평균위치를 산정
                                 var avgX = Math.Round(connectedComponent.Average(entity => entity.X), 1);
                                 var avgY = Math.Round(connectedComponent.Average(entity => entity.Y), 1);
                                 //Debug.WriteLine($"{currentGroup++}/{connectedComponents.Count} : ({avgX}, {avgY})[{connectedComponent.Count}]");
@@ -476,13 +472,9 @@ namespace Wpf.Rplidar.Solution.ViewModels
 
             return result;
         }
-
-
-        
-
        
 
-        List<Point> points = new List<Point>();  // 점들의 목록
+        
 
         
 
@@ -495,7 +487,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
                 PathGeometry = new PathGeometry();
                 if (points == null || points.Count != 4)
                 {
-                    throw new ArgumentException("Exactly 4 points are required", nameof(points));
+                    throw new ArgumentException("Exactly 4 _validPoints are required", nameof(points));
                 }
 
 
@@ -521,6 +513,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
             BoundaryPoints = CreateBoundary(_setupModel.BoundaryPoints);
             NotifyOfPropertyChange(() => BoundaryPoints);
             Refresh();
+            _logService.Info("Setup인스턴스 재적용");
             return Task.CompletedTask;
         }
         #endregion
@@ -764,7 +757,6 @@ namespace Wpf.Rplidar.Solution.ViewModels
         }
 
 
-
         private ObservableCollection<EllipseViewModel> ellipses = new ObservableCollection<EllipseViewModel>();
         public ObservableCollection<EllipseViewModel> Ellipses
         {
@@ -786,8 +778,10 @@ namespace Wpf.Rplidar.Solution.ViewModels
         private LidarService _lidarService;
         private TcpServerService _tcpServerService;
         private SetupModel _setupModel;
+        private LogService _logService;
         private ConnectedComponentFinder _connectedComponentFinder;
         private StreamGeometry geometry;
+        private List<Point> _validPoints = new List<Point>();  // 점들의 목록
         private object locker;
 
         private double _contentScale = 1.0;
@@ -797,6 +791,7 @@ namespace Wpf.Rplidar.Solution.ViewModels
         private Point origContentMouseDownPoint;
         private bool _isBoundarySet;
         private int _frameSquence;
+        public const int MAX_FRAME = 10000000;
         #endregion
     }
 }

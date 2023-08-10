@@ -19,7 +19,7 @@ namespace Wpf.Rplidar.Solution.Utils
             else if (parameter.ToString() == "Y")
                 key = "VERTICAL";
             else
-                key = "NONE";
+                key = "CLOSED";
 
             double size = (double)value;
 

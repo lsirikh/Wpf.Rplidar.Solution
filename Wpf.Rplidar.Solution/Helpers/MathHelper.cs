@@ -43,10 +43,6 @@ namespace Wpf.Rplidar.Solution.Helpers
             // Translate point back to origin
             point.X -= pivot.X;
             point.Y -= pivot.Y;
-            //if (isHigh)
-            //    point.Y -= pivot.Y;
-            //else
-            //    point.Y += pivot.Y;
 
             // Rotate point
             double radian = theta * Math.PI / 180; // Convert degree to radian
@@ -66,7 +62,7 @@ namespace Wpf.Rplidar.Solution.Helpers
             {
                 if (points != null && points.Count < 4)
                 {
-                    throw new ArgumentException("Exactly 4 points are required", nameof(points));
+                    throw new ArgumentException("Exactly 4 _validPoints are required", nameof(points));
                 }
 
 

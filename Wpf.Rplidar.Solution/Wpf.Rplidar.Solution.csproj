@@ -244,6 +244,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\RPLidarA1\RPLidarA1.csproj">
+      <Project>{20524229-475f-4c11-b71f-ff6f776405a5}</Project>
+      <Name>RPLidarA1</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Wpf.Libaries.ServerService\Wpf.Libaries.ServerService.csproj">
       <Project>{5c9f77cc-6be0-4f18-8221-cd98ef959240}</Project>
       <Name>Wpf.Libaries.ServerService</Name>
